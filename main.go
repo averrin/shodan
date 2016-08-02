@@ -7,6 +7,7 @@ import (
 
 	att "./modules/attendance/"
 	ts "./modules/trackstudio/"
+	wu "./modules/weather/"
 	"github.com/spf13/viper"
 )
 
@@ -26,4 +27,8 @@ func main() {
 	log.Println(info.GetHomeTime())
 	trackstudio := ts.Connect(viper.GetStringMapString("trackstudio"))
 	log.Println(trackstudio.GetReportedYesterday())
+
+	weather := wu.Connect(viper.GetStringMapString("weather"))
+	w := weather.GetWeather()
+	log.Println(fmt.Sprintf("%s - %v°", w.Weather, w.TempC))
 }
