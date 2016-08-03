@@ -99,7 +99,6 @@ func Connect(creds map[string]string) WUnderground {
 func (wu WUnderground) GetWeather() CurrentObservation {
 	var w CurrentObservation
 	url := fmt.Sprintf(wuURL, wu["apiKey"], wu["location"])
-	// log.Print(url)
 	response, err := http.Get(url)
 	if err != nil || response.StatusCode != 200 {
 		log.Print("Weather error")
