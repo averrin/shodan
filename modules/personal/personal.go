@@ -1,6 +1,11 @@
 package personal
 
-import "time"
+import (
+	"time"
+
+	sf "../sparkfun/"
+	wu "../weather/"
+)
 
 type Personal struct{}
 
@@ -70,4 +75,55 @@ func (Personal) GetSeason() (season Season) {
 		season = AUTUMN
 	}
 	return season
+}
+
+func (p Personal) GetPlaceIsOk(place sf.Place) bool {
+	day := p.GetDay()
+	daytime := p.GetDaytime()
+	if place == sf.WORK && day != WORKDAY {
+		return false
+	}
+	if place != sf.HOME && daytime == NIGHT {
+		return false
+	}
+	return true
+}
+
+func contains(s []string, e string) bool {
+	for _, a := range s {
+		if a == e {
+			return true
+		}
+	}
+	return false
+}
+
+func (p Personal) GetWeatherIsOk(weather wu.Weather) bool {
+	bad := []string{
+		"rain",
+		"chanceflurries",
+		"chancerain",
+		"chancesleet",
+		"chancetstorms",
+		"flurries",
+		"fog",
+		"hazy",
+		"sleet",
+		"snow",
+		"tstorms",
+	}
+	if contains(bad, weather.Icon) {
+		return false
+	}
+	season := p.GetSeason()
+	if weather.TempC > 28 || weather.TempC < -10 {
+		return false
+	}
+	if season == SUMMER && weather.TempC < 15 {
+		return false
+	}
+	if (season == SUMMER || season == AUTUMN) && weather.TempC < 5 {
+		return false
+	}
+	return true
 }

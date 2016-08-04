@@ -10,7 +10,7 @@ import (
 
 const wuURL = "http://api.wunderground.com/api/%s/conditions/q/%s.json"
 
-type CurrentObservation struct {
+type Weather struct {
 	// UV               string   `json:"UV"`
 	// DewpointC        int      `json:"dewpoint_c"`
 	// DewpointF        int      `json:"dewpoint_f"`
@@ -76,7 +76,7 @@ type CurrentObservation struct {
 
 // WeatherResponse from wunderweather json
 type WeatherResponse struct {
-	CurrentObservation `json:"current_observation"`
+	CurrentObservation Weather `json:"current_observation"`
 	Response           struct {
 		Features struct {
 			Conditions int `json:"conditions"`
@@ -96,8 +96,8 @@ func Connect(creds map[string]string) WUnderground {
 	return wu
 }
 
-func (wu WUnderground) GetWeather() CurrentObservation {
-	var w CurrentObservation
+func (wu WUnderground) GetWeather() Weather {
+	var w Weather
 	url := fmt.Sprintf(wuURL, wu["apiKey"], wu["location"])
 	response, err := http.Get(url)
 	if err != nil || response.StatusCode != 200 {

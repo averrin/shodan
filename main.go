@@ -5,10 +5,8 @@ import (
 	"fmt"
 	"log"
 
-	att "./modules/attendance/"
 	p "./modules/personal/"
 	sf "./modules/sparkfun/"
-	ts "./modules/trackstudio/"
 	wu "./modules/weather/"
 	"github.com/spf13/viper"
 )
@@ -22,13 +20,13 @@ func main() {
 	if err != nil {             // Handle errors reading the config file
 		panic(fmt.Errorf("Fatal error config file: %s \n", err))
 	}
-	attendance := att.Connect(viper.GetStringMapString("attendance"))
-	info := attendance.GetAttendance()
-	log.Println(info.AvgWorkingTime)
-	log.Println(info.Days[1].WorkingTime)
-	log.Println(info.GetHomeTime())
-	trackstudio := ts.Connect(viper.GetStringMapString("trackstudio"))
-	log.Println(trackstudio.GetReportedYesterday())
+	// attendance := att.Connect(viper.GetStringMapString("attendance"))
+	// info := attendance.GetAttendance()
+	// log.Println(info.AvgWorkingTime)
+	// log.Println(info.Days[1].WorkingTime)
+	// log.Println(info.GetHomeTime())
+	// trackstudio := ts.Connect(viper.GetStringMapString("trackstudio"))
+	// log.Println(trackstudio.GetReportedYesterday())
 
 	weather := wu.Connect(viper.GetStringMapString("weather"))
 	w := weather.GetWeather()
@@ -42,7 +40,10 @@ func main() {
 	// log.Println(pushbullet.GetPushes())
 
 	sparkfun := sf.Connect(viper.GetStringMap("sparkfun"))
-	log.Println(sparkfun.GetWhereIAm().Place == sf.WORK)
+	place := sparkfun.GetWhereIAm().Place
+	log.Println(place == sf.WORK)
 	log.Println(sparkfun.GetRoomTemp().Temp)
+	log.Println(personal.GetPlaceIsOk(place))
+	log.Println(personal.GetWeatherIsOk(w))
 
 }
