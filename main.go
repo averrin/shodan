@@ -7,6 +7,7 @@ import (
 
 	p "./modules/personal/"
 	sf "./modules/sparkfun/"
+	st "./modules/steam"
 	wu "./modules/weather/"
 	"github.com/spf13/viper"
 )
@@ -27,6 +28,8 @@ func main() {
 	// log.Println(info.GetHomeTime())
 	// trackstudio := ts.Connect(viper.GetStringMapString("trackstudio"))
 	// log.Println(trackstudio.GetReportedYesterday())
+	steam := st.Connect(viper.GetStringMapString("steam"))
+	log.Println(len(steam.GetGames()))
 
 	weather := wu.Connect(viper.GetStringMapString("weather"))
 	w := weather.GetWeather()
