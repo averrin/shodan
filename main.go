@@ -14,10 +14,10 @@ import (
 func main() {
 	flag.Parse()
 	viper.SetConfigType("yaml")
-	viper.SetConfigName("config") // name of config file (without extension)
+	viper.SetConfigName("config")
 	viper.AddConfigPath(".")
-	err := viper.ReadInConfig() // Find and read the config file
-	if err != nil {             // Handle errors reading the config file
+	err := viper.ReadInConfig()
+	if err != nil {
 		panic(fmt.Errorf("Fatal error config file: %s \n", err))
 	}
 	// attendance := att.Connect(viper.GetStringMapString("attendance"))
@@ -32,7 +32,7 @@ func main() {
 	w := weather.GetWeather()
 	log.Println(fmt.Sprintf("%s - %v°", w.Weather, w.TempC))
 
-	personal := p.Connect()
+	personal := p.Connect(viper.Get("personal"))
 	log.Println(personal.GetDaytime() == p.DAY, personal.GetDay() == p.WORKDAY, personal.GetSeason() == p.SUMMER)
 
 	// pushbullet := pb.Connect(viper.GetStringMapString("pushbullet"))

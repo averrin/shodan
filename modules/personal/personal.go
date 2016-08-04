@@ -9,7 +9,7 @@ import (
 
 type Personal struct{}
 
-func Connect() Personal {
+func Connect(creds interface{}) Personal {
 	return Personal{}
 }
 

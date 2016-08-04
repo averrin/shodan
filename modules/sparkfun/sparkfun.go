@@ -74,6 +74,13 @@ func (sf SparkFun) GetRoomTemp() RawPoint {
 	return stream[0]
 }
 
+func (sf SparkFun) SendRoomTemp(temp string, hum string) {
+	sf.Send("room", map[string]string{
+		"hum":  hum,
+		"temp": temp,
+	})
+}
+
 func (sf SparkFun) GetStream(name string) Stream {
 
 	client := &http.Client{}
@@ -91,4 +98,18 @@ func (sf SparkFun) GetStream(name string) Stream {
 	stream := Stream{}
 	json.Unmarshal(data, &stream)
 	return stream
+}
+
+func (sf SparkFun) Send(name string, vars map[string]string) {
+	client := &http.Client{}
+	url := fmt.Sprintf("%s/input/%s?private_key=%s", sfURL, sf[name]["publicKey"], sf[name]["privateKey"])
+	for k, v := range vars {
+		url += fmt.Sprintf("&%s=%s", k, v)
+	}
+	req, err := http.NewRequest("GET", url, nil)
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Fatal(err)
+	}
+	resp.Body.Close()
 }
