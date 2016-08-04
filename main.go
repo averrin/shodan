@@ -4,10 +4,10 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"time"
 
 	att "./modules/attendance/"
-	pb "./modules/pushbullet/"
+	p "./modules/personal/"
+	sf "./modules/sparkfun/"
 	ts "./modules/trackstudio/"
 	wu "./modules/weather/"
 	"github.com/spf13/viper"
@@ -34,73 +34,15 @@ func main() {
 	w := weather.GetWeather()
 	log.Println(fmt.Sprintf("%s - %v°", w.Weather, w.TempC))
 
-	log.Println(GetDaytime(), GetDay(), GetSeason())
+	personal := p.Connect()
+	log.Println(personal.GetDaytime() == p.DAY, personal.GetDay() == p.WORKDAY, personal.GetSeason() == p.SUMMER)
 
-	pushbullet := pb.Connect(viper.GetStringMapString("pushbullet"))
+	// pushbullet := pb.Connect(viper.GetStringMapString("pushbullet"))
 	// pushbullet.SendPush("Hi from Shodan", "Hello, insect")
-	log.Println(pushbullet.GetPushes())
-}
+	// log.Println(pushbullet.GetPushes())
 
-type Daytime int
+	sparkfun := sf.Connect(viper.GetStringMap("sparkfun"))
+	log.Println(sparkfun.GetWhereIAm().Place == sf.WORK)
+	log.Println(sparkfun.GetRoomTemp().Temp)
 
-const (
-	DAY = iota
-	NIGHT
-	MORNING
-	EVENING
-)
-
-type Day int
-
-const (
-	WORKDAY = iota
-	WEEKEND
-)
-
-type Season int
-
-const (
-	WINTER = iota
-	SPRING
-	SUMMER
-	AUTUMN
-)
-
-func GetDaytime() (daytime Daytime) {
-	now := time.Now()
-	h := now.Hour()
-	daytime = DAY
-	if h < 12 && h >= 5 {
-		daytime = MORNING
-	} else if h >= 19 && h < 23 {
-		daytime = EVENING
-	} else if h >= 23 || h < 5 {
-		daytime = NIGHT
-	}
-	return daytime
-}
-
-func GetDay() (day Day) {
-	now := time.Now()
-	d := now.Day()
-	day = WORKDAY
-	if d >= 5 {
-		day = WEEKEND
-	}
-	return day
-}
-
-func GetSeason() (season Season) {
-	now := time.Now()
-	m := now.Month()
-	if m == 11 && m <= 1 {
-		season = WINTER
-	} else if m >= 2 && m <= 4 {
-		season = SPRING
-	} else if m >= 5 && m <= 7 {
-		season = SUMMER
-	} else {
-		season = AUTUMN
-	}
-	return season
 }
