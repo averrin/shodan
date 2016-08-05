@@ -38,20 +38,12 @@ func (tv TeamViewer) Auth() Creds {
 		}
 		c := Creds{}
 		json.Unmarshal(data, &c)
-		return c
+		return tv.refreshToken(c)
 	}
-	return tv.GetNewCreds()
+	return tv.getNewCreds()
 }
 
-func (tv TeamViewer) RefreshGetNewCreds(Creds) Creds {
-}
-
-func (tv TeamViewer) GetNewCreds() Creds {
-	tokenURL := fmt.Sprintf("%s/%s", baseURL, "oauth2/token")
-	args := url.Values{"code": {tv["code"]}, "grant_type": {"authorization_code"},
-		"client_id": {tv["clientID"]}, "client_secret": {tv["clientSecret"]},
-	}.Encode()
-	log.Println(tokenURL, args)
+func (tv TeamViewer) getCreds(tokenURL string, args string) Creds {
 	req, _ := http.NewRequest("POST", tokenURL,
 		bytes.NewBufferString(args))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -73,6 +65,22 @@ func (tv TeamViewer) GetNewCreds() Creds {
 	credPath := path.Join(dir, ".tv_credentials")
 	ioutil.WriteFile(credPath, resp, 0644)
 	return creds
+}
+
+func (tv TeamViewer) refreshToken(c Creds) Creds {
+	tokenURL := fmt.Sprintf("%s/%s", baseURL, "oauth2/token")
+	args := url.Values{"refresh_token": {c.RefreshToken}, "grant_type": {"refresh_token"},
+		"client_id": {tv["clientID"]}, "client_secret": {tv["clientSecret"]},
+	}.Encode()
+	return tv.getCreds(tokenURL, args)
+}
+
+func (tv TeamViewer) getNewCreds() Creds {
+	tokenURL := fmt.Sprintf("%s/%s", baseURL, "oauth2/token")
+	args := url.Values{"code": {tv["code"]}, "grant_type": {"authorization_code"},
+		"client_id": {tv["clientID"]}, "client_secret": {tv["clientSecret"]},
+	}.Encode()
+	return tv.getCreds(tokenURL, args)
 }
 
 type Creds struct {

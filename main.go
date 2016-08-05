@@ -6,6 +6,7 @@ import (
 	"log"
 	"time"
 
+	at "./modules/attendance/"
 	p "./modules/personal/"
 	pb "./modules/pushbullet/"
 	sf "./modules/sparkfun/"
@@ -30,14 +31,9 @@ func main() {
 
 	weather := wu.Connect(viper.GetStringMapString("weather"))
 	personal := p.Connect(viper.Get("personal"))
-	// w := weather.GetWeather()
-
 	pushbullet = pb.Connect(viper.GetStringMapString("pushbullet"))
-	// pushbullet.SendPush("Hi from Shodan", "Hello, insect")
-	// log.Println(pushbullet.GetPushes())
-
 	sparkfun := sf.Connect(viper.GetStringMap("sparkfun"))
-	// log.Println(fmt.Sprintf("Temp in room: %v°", sparkfun.GetRoomTemp().Temp))
+	attendance := at.Connect(viper.GetStringMapString("attendance")).GetAttendance()
 
 	teamviewer := tv.Connect(viper.GetStringMapString("teamviewer"))
 	log.Println(teamviewer["access_token"])
@@ -59,6 +55,15 @@ func main() {
 		}
 	}(pchan)
 
+	tchan := make(chan time.Duration)
+	go func(c chan time.Duration) {
+		for {
+			_, _, sinceDI, _, _ := attendance.GetHomeTime()
+			c <- sinceDI
+			time.Sleep(1 * time.Minute)
+		}
+	}(tchan)
+
 	weatherState := BinaryState{
 		"Ура погода вновь отличная!", "Уруру. Shodan",
 		"Погода ухудшилась.", "Мне очень жаль. Shodan",
@@ -73,6 +78,13 @@ func main() {
 	pm := InitBinaryMachine(&placeState)
 	for {
 		select {
+		case t := <-tchan:
+			p := <-pchan
+			if t.Minutes() < 1 && p == sf.WORK {
+				// pushbullet.SendPush("Ты это чего еще на работе?", "Марш домой!")
+				// TODO: add machine for only one notifucation
+				// TODO: start notification after 10 minutes after deadline
+			}
 		case w := <-wchan:
 			log.Println("Street weather:", fmt.Sprintf("%s - %v°", w.Weather, w.TempC))
 			ws := personal.GetWeatherIsOk(w)
