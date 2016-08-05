@@ -54,9 +54,9 @@ func (Personal) GetDaytime() (daytime Daytime) {
 
 func (Personal) GetDay() (day Day) {
 	now := time.Now()
-	d := now.Day()
+	d := now.Weekday()
 	day = WORKDAY
-	if d >= 5 {
+	if d >= 6 {
 		day = WEEKEND
 	}
 	return day

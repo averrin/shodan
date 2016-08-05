@@ -116,6 +116,9 @@ func (wu WUnderground) GetWeather() Weather {
 	}
 	// fmt.Printf("%v - %v", r.CurrentObservation.Icon, r.CurrentObservation.TempC)
 	w = r.CurrentObservation
+	if w.Weather == "" {
+		return wu.GetWeather()
+	}
 	// w.TempC = rand.Int()
 	return w
 }
