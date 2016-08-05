@@ -9,6 +9,7 @@ import (
 	p "./modules/personal/"
 	pb "./modules/pushbullet/"
 	sf "./modules/sparkfun/"
+	tv "./modules/teamviewer/"
 	wu "./modules/weather/"
 	"github.com/jinzhu/gorm"
 	"github.com/qor/transition"
@@ -36,7 +37,10 @@ func main() {
 	// log.Println(pushbullet.GetPushes())
 
 	sparkfun := sf.Connect(viper.GetStringMap("sparkfun"))
-	log.Println(fmt.Sprintf("Temp in room: %v°", sparkfun.GetRoomTemp().Temp))
+	// log.Println(fmt.Sprintf("Temp in room: %v°", sparkfun.GetRoomTemp().Temp))
+
+	teamviewer := tv.Connect(viper.GetStringMapString("teamviewer"))
+	log.Println(teamviewer["access_token"])
 
 	wchan := make(chan wu.Weather)
 	go func(c chan wu.Weather) {
