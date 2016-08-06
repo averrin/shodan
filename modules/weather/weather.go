@@ -100,15 +100,16 @@ func (wu WUnderground) GetWeather() Weather {
 	var w Weather
 	url := fmt.Sprintf(wuURL, wu["apiKey"], wu["location"])
 	response, err := http.Get(url)
+	defer response.Body.Close()
 	if err != nil || response.StatusCode != 200 {
-		log.Print("Weather error")
+		b, _ := ioutil.ReadAll(response.Body)
+		log.Println("Weather error", response.StatusCode, b)
 		return w
 	}
 
 	defer response.Body.Close()
 	var r WeatherResponse
 	body, _ := ioutil.ReadAll(response.Body)
-	defer response.Body.Close()
 	err = json.Unmarshal(body, &r)
 	if err != nil {
 		log.Print(string(body))

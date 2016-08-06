@@ -43,7 +43,30 @@ func (tv TeamViewer) Auth() Creds {
 	return tv.getNewCreds()
 }
 
+func (tv TeamViewer) GetPCStatus() bool {
+	tokenURL := fmt.Sprintf("%s/%s", baseURL, "devices")
+	req, _ := http.NewRequest("GET", tokenURL, nil)
+	req.Header.Set("Authorization", "Bearer "+tv["access_token"])
+	client := &http.Client{}
+	response, err := client.Do(req)
+	if err != nil {
+		log.Print("TeamViewer error ", err)
+	}
+	defer response.Body.Close()
+	resp, _ := ioutil.ReadAll(response.Body)
+	devices := DevicesResponse{}
+	json.Unmarshal(resp, &devices)
+	// log.Println(devices)
+	for _, d := range devices.Devices {
+		if d.Alias == "ONYX" && d.OnlineState == "Online" {
+			return true
+		}
+	}
+	return false
+}
+
 func (tv TeamViewer) getCreds(tokenURL string, args string) Creds {
+	// log.Println(tokenURL, args)
 	req, _ := http.NewRequest("POST", tokenURL,
 		bytes.NewBufferString(args))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -88,4 +111,17 @@ type Creds struct {
 	TokenType    string `json:"token_type"`
 	ExpiresIn    int    `json:"expires_in"`
 	RefreshToken string `json:"refresh_token"`
+}
+
+type Device struct {
+	RemotecontrolID   string `json:"remotecontrol_id"`
+	DeviceID          string `json:"device_id"`
+	Alias             string `json:"alias"`
+	Groupid           string `json:"groupid"`
+	OnlineState       string `json:"online_state"`
+	SupportedFeatures string `json:"supported_features,omitempty"`
+}
+
+type DevicesResponse struct {
+	Devices []Device `json:"devices"`
 }

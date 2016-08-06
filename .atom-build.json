@@ -1,13 +1,11 @@
 {
   "keymap": "alt-v",
   "cwd": "{PROJECT_PATH}",
-  "cmd": "/usr/local/go/bin/go",
+  "cmd": "C:\\Windows\\System32\\bash.exe build.sh",
   "name": "shodan",
-  "args": ["build", "-ldflags \"-s\"", "-o", "./shodan", "./*.go"],
   "sh": true,
   "env": {
-    "GOROOT": "/usr/local/go",
-    "GOPATH": "/home/user/projects/go:/home/user/projects/shodan"
+    "GOROOT": "C:\\Go\\bin"
   },
   "errorMatch": [
     "(?<file>[\/0-9a-zA-Z\\._]+):(?<line>\\d+): (?<message>.+)"

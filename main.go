@@ -6,18 +6,20 @@ import (
 	"log"
 	"time"
 
-	at "./modules/attendance/"
+	// at "./modules/attendance/"
 	p "./modules/personal/"
 	pb "./modules/pushbullet/"
 	sf "./modules/sparkfun/"
 	tv "./modules/teamviewer/"
+	tg "./modules/telegram/"
 	wu "./modules/weather/"
-	"github.com/jinzhu/gorm"
 	"github.com/qor/transition"
 	"github.com/spf13/viper"
 )
 
 var pushbullet pb.Pushbullet
+var telegram tg.Telegram
+var teamviewer tv.TeamViewer
 
 func main() {
 	flag.Parse()
@@ -33,10 +35,11 @@ func main() {
 	personal := p.Connect(viper.Get("personal"))
 	pushbullet = pb.Connect(viper.GetStringMapString("pushbullet"))
 	sparkfun := sf.Connect(viper.GetStringMap("sparkfun"))
-	attendance := at.Connect(viper.GetStringMapString("attendance")).GetAttendance()
+	// attendance := at.Connect(viper.GetStringMapString("attendance")).GetAttendance()
+	telegram = tg.Connect(viper.GetStringMapString("telegram"))
 
-	teamviewer := tv.Connect(viper.GetStringMapString("teamviewer"))
-	log.Println(teamviewer["access_token"])
+	teamviewer = tv.Connect(viper.GetStringMapString("teamviewer"))
+	log.Println(teamviewer.GetPCStatus())
 
 	wchan := make(chan wu.Weather)
 	go func(c chan wu.Weather) {
@@ -46,45 +49,48 @@ func main() {
 		}
 	}(wchan)
 
-	pchan := make(chan sf.Place)
-	go func(c chan sf.Place) {
+	pchan := make(chan sf.Point)
+	// pchan <- sparkfun.GetWhereIAm()
+	go func(c chan sf.Point) {
 		for {
-			place := sparkfun.GetWhereIAm().Place
+			place := sparkfun.GetWhereIAm()
 			c <- place
 			time.Sleep(1 * time.Minute)
 		}
 	}(pchan)
 
-	tchan := make(chan time.Duration)
-	go func(c chan time.Duration) {
-		for {
-			_, _, sinceDI, _, _ := attendance.GetHomeTime()
-			c <- sinceDI
-			time.Sleep(1 * time.Minute)
-		}
-	}(tchan)
+	// tchan := make(chan time.Duration)
+	// go func(c chan time.Duration) {
+	// 	for {
+	// 		_, _, sinceDI, _, _ := attendance.GetHomeTime()
+	// 		c <- sinceDI
+	// 		time.Sleep(1 * time.Minute)
+	// 	}
+	// }(tchan)
 
 	weatherState := BinaryState{
 		"Ура погода вновь отличная!", "Уруру. Shodan",
 		"Погода ухудшилась.", "Мне очень жаль. Shodan",
 		transition.Transition{},
 	}
-	wm := InitBinaryMachine(&weatherState)
+	wm := NewBinaryMachine(&weatherState)
 	placeState := BinaryState{
 		"Фух, я волновалась.", "Уруру. Shodan",
 		"Эй, с тобой все в порядке?", "Твоя Shodan",
 		transition.Transition{},
 	}
-	pm := InitBinaryMachine(&placeState)
+	pm := NewBinaryMachine(&placeState)
+	ps := PlaceState{}
+	m := NewPlaceMachine(&ps)
 	for {
 		select {
-		case t := <-tchan:
-			p := <-pchan
-			if t.Minutes() < 1 && p == sf.WORK {
-				// pushbullet.SendPush("Ты это чего еще на работе?", "Марш домой!")
-				// TODO: add machine for only one notifucation
-				// TODO: start notification after 10 minutes after deadline
-			}
+		// case t := <-tchan:
+		// p := <-pchan
+		// if t.Minutes() < 1 && p.Place == sf.WORK {
+		// pushbullet.SendPush("Ты это чего еще на работе?", "Марш домой!")
+		// TODO: add machine for only one notifucation
+		// TODO: start notification after 10 minutes after deadline
+		// }
 		case w := <-wchan:
 			log.Println("Street weather:", fmt.Sprintf("%s - %v°", w.Weather, w.TempC))
 			ws := personal.GetWeatherIsOk(w)
@@ -97,7 +103,8 @@ func main() {
 			}
 			wm.Trigger(event, &weatherState, nil)
 		case p := <-pchan:
-			ps := personal.GetPlaceIsOk(p)
+			m.Trigger(p.Name, &ps, nil)
+			ps := personal.GetPlaceIsOk(p.Place)
 			log.Println("Im on my place: ", ps)
 			var event string
 			if ps {
@@ -109,34 +116,4 @@ func main() {
 		default:
 		}
 	}
-}
-
-func InitBinaryMachine(state *BinaryState) *transition.StateMachine {
-	wm := transition.New(state)
-	wm.Initial("good")
-	wm.State("bad").Enter(func(state interface{}, tx *gorm.DB) error {
-		s := state.(*BinaryState)
-		pushbullet.SendPush(s.BadTitle, s.BadBody)
-		return nil
-	}).Exit(func(state interface{}, tx *gorm.DB) error {
-		s := state.(*BinaryState)
-		pushbullet.SendPush(s.GoodTitle, s.GoodBody)
-		return nil
-	})
-	wm.Event("to_good").To("good").From("bad")
-	wm.Event("to_bad").To("bad").From("good")
-	return wm
-}
-
-type BinaryState struct {
-	GoodTitle string
-	GoodBody  string
-	BadTitle  string
-	BadBody   string
-
-	transition.Transition
-}
-
-type PlaceState struct {
-	transition.Transition
 }

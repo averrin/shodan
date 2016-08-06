@@ -17,9 +17,11 @@ const (
 	WORK = iota
 	HOME
 	NOWHERE
+	VILLAGE
+	PAVEL
 )
 
-var places map[string]Place
+var Places map[string]Place
 
 type SparkFun map[string]map[string]string
 
@@ -39,10 +41,12 @@ func Connect(creds map[string]interface{}) SparkFun {
 		sf[k] = m
 	}
 
-	places = map[string]Place{
+	Places = map[string]Place{
 		"work":    WORK,
 		"home":    HOME,
 		"nowhere": NOWHERE,
+		"village": VILLAGE,
+		"pavel":   PAVEL,
 	}
 	return sf
 }
@@ -54,6 +58,7 @@ type RawPoint struct {
 	Timestamp time.Time `json:"timestamp"`
 }
 type Point struct {
+	Name      string
 	Place     Place
 	Timestamp time.Time
 }
@@ -63,8 +68,12 @@ type Stream []RawPoint
 
 func (sf SparkFun) GetWhereIAm() Point {
 	stream := sf.GetStream("whereiam")
+	if len(stream) == 0 || Places[stream[0].Place] == 0 {
+		return Point{}
+	}
 	return Point{
-		Place:     places[stream[0].Place],
+		Name:      stream[0].Place,
+		Place:     Places[stream[0].Place],
 		Timestamp: stream[0].Timestamp,
 	}
 }
@@ -84,7 +93,7 @@ func (sf SparkFun) SendRoomTemp(temp string, hum string) {
 func (sf SparkFun) GetStream(name string) Stream {
 
 	client := &http.Client{}
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/output/%s", sfURL, sf[name]["publicKey"]), nil)
+	req, err := http.NewRequest("GET", fmt.Sprintf("%s/output/%s?page=1", sfURL, sf[name]["publicKey"]), nil)
 	req.Header.Set("Accept", "application/json")
 	resp, err := client.Do(req)
 	if err != nil {
