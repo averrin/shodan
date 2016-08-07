@@ -49,7 +49,7 @@ func (tg Telegram) Serve() {
 	u.Timeout = 60
 
 	updates, err := bot.GetUpdatesChan(u)
-	bot.Send(tgbotapi.NewMessage(cid, "Привет, я включилась."))
+	// bot.Send(tgbotapi.NewMessage(cid, "Привет, я включилась."))
 
 	for {
 		select {
@@ -71,7 +71,7 @@ func (tg Telegram) Serve() {
 }
 
 func (tg Telegram) GetCat() string {
-	url := "http://thecatapi.com/api/images/get?format=src&type=png"
+	url := "http://thecatapi.com/api/images/get?format=src&type=gif"
 	fname := "cat.png"
 	out, _ := os.Create(fname)
 	defer out.Close()

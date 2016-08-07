@@ -8,7 +8,7 @@ import (
 	"github.com/qor/transition"
 )
 
-func NewBinaryMachine(state *BinaryState) *transition.StateMachine {
+func NewBinaryMachine(state *BinaryState, shodan *Shodan) *transition.StateMachine {
 	wm := transition.New(state)
 	wm.Initial("good")
 	wm.State("bad").Enter(func(state interface{}, tx *gorm.DB) error {
@@ -36,7 +36,7 @@ type BinaryState struct {
 	transition.Transition
 }
 
-func NewPlaceMachine(state *PlaceState) *transition.StateMachine {
+func NewPlaceMachine(state *PlaceState, shodan *Shodan) *transition.StateMachine {
 	m := transition.New(state)
 	m.Initial("nowhere")
 	m.State("nowhere")
@@ -66,6 +66,10 @@ func NewPlaceMachine(state *PlaceState) *transition.StateMachine {
 	})
 	m.Event("home").To("home").From("nowhere")
 	m.Event("work").To("work").From("nowhere")
+	m.Event("village").To("village").From("nowhere")
+	m.Event("nowhere").To("nowhere").From("work")
+	m.Event("nowhere").To("nowhere").From("home")
+	m.Event("nowhere").To("nowhere").From("village")
 	return m
 }
 
