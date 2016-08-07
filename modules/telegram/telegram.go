@@ -62,7 +62,7 @@ func (tg Telegram) Serve() {
 			// msg.ReplyToMessageID = update.Message.MessageID
 			// bot.Send(msg)
 
-			bot.Send(tgbotapi.NewDocumentUpload(cid, tg.GetCat()))
+			bot.Send(tgbotapi.NewPhotoUpload(cid, tg.GetCat()))
 		// case message := <-files:
 		case message := <-messages:
 			bot.Send(tgbotapi.NewMessage(cid, message))
@@ -71,8 +71,8 @@ func (tg Telegram) Serve() {
 }
 
 func (tg Telegram) GetCat() string {
-	url := "http://thecatapi.com/api/images/get?format=src&type=gif"
-	fname := "cat.gif"
+	url := "http://thecatapi.com/api/images/get?format=src&type=png"
+	fname := "cat.png"
 	out, _ := os.Create(fname)
 	defer out.Close()
 	resp, _ := http.Get(url)

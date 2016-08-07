@@ -3,7 +3,6 @@ package personal
 import (
 	"time"
 
-	sf "../sparkfun/"
 	wu "../weather/"
 )
 
@@ -77,13 +76,13 @@ func (Personal) GetSeason() (season Season) {
 	return season
 }
 
-func (p Personal) GetPlaceIsOk(place sf.Place) bool {
+func (p Personal) GetPlaceIsOk(place Place) bool {
 	day := p.GetDay()
 	daytime := p.GetDaytime()
-	if place == sf.WORK && day != WORKDAY {
+	if place == WORK && day != WORKDAY {
 		return false
 	}
-	if place != sf.HOME && daytime == NIGHT {
+	if place != HOME && daytime == NIGHT {
 		return false
 	}
 	return true
@@ -127,3 +126,15 @@ func (p Personal) GetWeatherIsOk(weather wu.Weather) bool {
 	}
 	return true
 }
+
+type Place int
+
+const (
+	WORK = iota
+	HOME
+	NOWHERE
+	VILLAGE
+	PAVEL
+)
+
+var Places map[string]Place

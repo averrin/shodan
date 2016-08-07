@@ -7,21 +7,11 @@ import (
 	"log"
 	"net/http"
 	"time"
+
+	p "../personal/"
 )
 
 const sfURL = "https://data.sparkfun.com"
-
-type Place int
-
-const (
-	WORK = iota
-	HOME
-	NOWHERE
-	VILLAGE
-	PAVEL
-)
-
-var Places map[string]Place
 
 type SparkFun map[string]map[string]string
 
@@ -41,12 +31,12 @@ func Connect(creds map[string]interface{}) SparkFun {
 		sf[k] = m
 	}
 
-	Places = map[string]Place{
-		"work":    WORK,
-		"home":    HOME,
-		"nowhere": NOWHERE,
-		"village": VILLAGE,
-		"pavel":   PAVEL,
+	p.Places = map[string]p.Place{
+		"work":    p.WORK,
+		"home":    p.HOME,
+		"nowhere": p.NOWHERE,
+		"village": p.VILLAGE,
+		"pavel":   p.PAVEL,
 	}
 	return sf
 }
@@ -59,7 +49,7 @@ type RawPoint struct {
 }
 type Point struct {
 	Name      string
-	Place     Place
+	Place     p.Place
 	Timestamp time.Time
 }
 
@@ -68,12 +58,12 @@ type Stream []RawPoint
 
 func (sf SparkFun) GetWhereIAm() Point {
 	stream := sf.GetStream("whereiam")
-	if len(stream) == 0 || Places[stream[0].Place] == 0 {
+	if len(stream) == 0 || p.Places[stream[0].Place] == 0 {
 		return Point{}
 	}
 	return Point{
 		Name:      stream[0].Place,
-		Place:     Places[stream[0].Place],
+		Place:     p.Places[stream[0].Place],
 		Timestamp: stream[0].Timestamp,
 	}
 }
@@ -100,11 +90,12 @@ func (sf SparkFun) GetStream(name string) Stream {
 		log.Fatal(err)
 	}
 	data, err := ioutil.ReadAll(resp.Body)
+	stream := Stream{}
 	resp.Body.Close()
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
+		return stream
 	}
-	stream := Stream{}
 	json.Unmarshal(data, &stream)
 	return stream
 }

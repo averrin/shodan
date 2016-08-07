@@ -74,12 +74,12 @@ func main() {
 		transition.Transition{},
 	}
 	wm := NewBinaryMachine(&weatherState)
-	placeState := BinaryState{
-		"Фух, я волновалась.", "Уруру. Shodan",
-		"Эй, с тобой все в порядке?", "Твоя Shodan",
-		transition.Transition{},
-	}
-	pm := NewBinaryMachine(&placeState)
+	// placeState := BinaryState{
+	// 	"Фух, я волновалась.", "Уруру. Shodan",
+	// 	"Эй, с тобой все в порядке?", "Твоя Shodan",
+	// 	transition.Transition{},
+	// }
+	// pm := NewBinaryMachine(&placeState)
 	ps := PlaceState{}
 	m := NewPlaceMachine(&ps)
 	for {
@@ -104,15 +104,15 @@ func main() {
 			wm.Trigger(event, &weatherState, nil)
 		case p := <-pchan:
 			m.Trigger(p.Name, &ps, nil)
-			ps := personal.GetPlaceIsOk(p.Place)
-			log.Println("Im on my place: ", ps)
-			var event string
-			if ps {
-				event = "to_good"
-			} else {
-				event = "to_bad"
-			}
-			pm.Trigger(event, &placeState, nil)
+			// ps := personal.GetPlaceIsOk(p.Place)
+			// log.Println("Im on my place: ", ps)
+			// var event string
+			// if ps {
+			// 	event = "to_good"
+			// } else {
+			// 	event = "to_bad"
+			// }
+			// pm.Trigger(event, &placeState, nil)
 		default:
 		}
 	}
