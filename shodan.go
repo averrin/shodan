@@ -6,8 +6,22 @@ import (
 	"math/rand"
 	"time"
 
+	p "./modules/personal/"
+	pb "./modules/pushbullet/"
+	sf "./modules/sparkfun/"
+	tv "./modules/teamviewer/"
+	tg "./modules/telegram/"
+	wu "./modules/weather/"
 	"github.com/qor/transition"
+	"github.com/spf13/viper"
 )
+
+var pushbullet pb.Pushbullet
+var telegram tg.Telegram
+var teamviewer tv.TeamViewer
+var weather wu.WUnderground
+var sparkfun sf.SparkFun
+var personal p.Personal
 
 type ShodanString []string
 
@@ -16,18 +30,37 @@ func (s ShodanString) String() string {
 }
 
 type Shodan struct {
-	Strings map[string]ShodanString
+	Strings  map[string]ShodanString
+	Machines map[string]*transition.StateMachine
+	States   map[string]transition.Stater
 }
 
 func NewShodan() *Shodan {
 	s := Shodan{}
+	s.Machines = map[string]*transition.StateMachine{}
+	s.States = map[string]transition.Stater{}
 	s.Strings = map[string]ShodanString{
 		"hello": ShodanString{
 			"Привет, я включилась.",
 			"О, уже утро?",
 			"Я уже работаю, а ты?",
 		},
+		"good weather": ShodanString{
+			"Ура погода вновь отличная!\n Уруру. Shodan",
+		},
+		"bad weather": ShodanString{
+			"Погода ухудшилась.\n Мне очень жаль. Shodan",
+		},
 	}
+
+	weather = wu.Connect(viper.GetStringMapString("weather"))
+	personal = p.Connect(viper.Get("personal"))
+	pushbullet = pb.Connect(viper.GetStringMapString("pushbullet"))
+	sparkfun = sf.Connect(viper.GetStringMap("sparkfun"))
+	// attendance := at.Connect(viper.GetStringMapString("attendance")).GetAttendance()
+	telegram = tg.Connect(viper.GetStringMapString("telegram"))
+
+	teamviewer = tv.Connect(viper.GetStringMapString("teamviewer"))
 
 	// tchan := make(chan time.Duration)
 	// go func(c chan time.Duration) {
@@ -39,11 +72,12 @@ func NewShodan() *Shodan {
 	// }(tchan)
 
 	weatherState := BinaryState{
-		"Ура погода вновь отличная!", "Уруру. Shodan",
-		"Погода ухудшилась.", "Мне очень жаль. Shodan",
+		"good weather", "bad weather",
 		transition.Transition{},
 	}
+	s.States["weather"] = &weatherState
 	wm := NewBinaryMachine(&weatherState, &s)
+	s.Machines["weather"] = wm
 	// placeState := BinaryState{
 	// 	"Фух, я волновалась.", "Уруру. Shodan",
 	// 	"Эй, с тобой все в порядке?", "Твоя Shodan",
@@ -51,12 +85,18 @@ func NewShodan() *Shodan {
 	// }
 	// pm := NewBinaryMachine(&placeState)
 	ps := PlaceState{}
+	s.States["place"] = &ps
 	m := NewPlaceMachine(&ps, &s)
+	s.Machines["place"] = m
 	return &s
 }
 
-func (s *Shodan) Say(name string) string {
+func (s *Shodan) GetString(name string) string {
 	return fmt.Sprintf("%s", s.Strings[name])
+}
+
+func (s *Shodan) Say(name string) {
+	telegram.Send(s.GetString(name))
 }
 
 func (s *Shodan) Serve() {
@@ -77,7 +117,7 @@ func (s *Shodan) Serve() {
 		}
 	}(pchan)
 
-	telegram.Send(s.Say("hello"))
+	s.Say("hello")
 	for {
 		select {
 		// case t := <-tchan:
@@ -97,9 +137,9 @@ func (s *Shodan) Serve() {
 			} else {
 				event = "to_bad"
 			}
-			wm.Trigger(event, &weatherState, nil)
+			s.Machines["weather"].Trigger(event, s.States["weather"], nil)
 		case p := <-pchan:
-			m.Trigger(p.Name, &ps, nil)
+			s.Machines["place"].Trigger(p.Name, s.States["place"], nil)
 			// ps := personal.GetPlaceIsOk(p.Place)
 			// log.Println("Im on my place: ", ps)
 			// var event string

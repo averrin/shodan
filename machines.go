@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/jinzhu/gorm"
@@ -13,13 +12,11 @@ func NewBinaryMachine(state *BinaryState, shodan *Shodan) *transition.StateMachi
 	wm.Initial("good")
 	wm.State("bad").Enter(func(state interface{}, tx *gorm.DB) error {
 		s := state.(*BinaryState)
-		// pushbullet.SendPush(s.BadTitle, s.BadBody)
-		telegram.Send(fmt.Sprintf("%s\n%s", s.BadTitle, s.BadBody))
+		shodan.Say(s.BadName)
 		return nil
 	}).Exit(func(state interface{}, tx *gorm.DB) error {
 		s := state.(*BinaryState)
-		// pushbullet.SendPush(s.GoodTitle, s.GoodBody)
-		telegram.Send(fmt.Sprintf("%s\n%s", s.GoodTitle, s.GoodBody))
+		shodan.Say(s.GoodName)
 		return nil
 	})
 	wm.Event("to_good").To("good").From("bad")
@@ -28,10 +25,8 @@ func NewBinaryMachine(state *BinaryState, shodan *Shodan) *transition.StateMachi
 }
 
 type BinaryState struct {
-	GoodTitle string
-	GoodBody  string
-	BadTitle  string
-	BadBody   string
+	GoodName string
+	BadName  string
 
 	transition.Transition
 }
