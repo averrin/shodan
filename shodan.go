@@ -125,7 +125,9 @@ func (s *Shodan) Serve() {
 	go func(c chan sf.Point) {
 		for {
 			place := sparkfun.GetWhereIAm()
-			c <- place
+			if place.Name != "" {
+				c <- place
+			}
 			time.Sleep(1 * time.Minute)
 		}
 	}(pchan)

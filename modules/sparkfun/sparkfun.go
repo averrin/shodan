@@ -81,16 +81,17 @@ func (sf SparkFun) SendRoomTemp(temp string, hum string) {
 }
 
 func (sf SparkFun) GetStream(name string) Stream {
+	stream := Stream{}
 
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", fmt.Sprintf("%s/output/%s?page=1", sfURL, sf[name]["publicKey"]), nil)
 	req.Header.Set("Accept", "application/json")
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
+		return stream
 	}
 	data, err := ioutil.ReadAll(resp.Body)
-	stream := Stream{}
 	resp.Body.Close()
 	if err != nil {
 		log.Println(err)
