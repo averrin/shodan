@@ -34,29 +34,36 @@ type BinaryState struct {
 func NewPlaceMachine(state *PlaceState, shodan *Shodan) *transition.StateMachine {
 	m := transition.New(state)
 	m.Initial("nowhere")
-	m.State("nowhere")
+	m.State("nowhere").Enter(func(state interface{}, tx *gorm.DB) error {
+		s := state.(*PlaceState)
+		go func() {
+			time.Sleep(5 * time.Minute)
+			if s.GetState() == "nowhere" {
+				shodan.Say("good way")
+			}
+		}()
+		return nil
+	})
 	m.State("village")
 	m.State("pavel")
 	m.State("home").Enter(func(state interface{}, tx *gorm.DB) error {
 		s := state.(*PlaceState)
-		telegram.Send("Ты наконец дома, ура!")
+		shodan.Say("at home")
 		if !teamviewer.GetPCStatus() {
 			go func() {
 				time.Sleep(15 * time.Minute)
 				if !teamviewer.GetPCStatus() && s.GetState() == "home" {
-					telegram.Send("Ты 15 минут дома, а комп не включен. Все в порядке?")
+					shodan.Say("at home, no pc")
 				}
 			}()
 		}
 		return nil
 	}).Exit(func(state interface{}, tx *gorm.DB) error {
-		// s := state.(*PlaceState)
-		telegram.Send("Хорошей дороги.")
 		return nil
 	})
 	m.State("work").Exit(func(state interface{}, tx *gorm.DB) error {
 		// s := state.(*PlaceState)
-		telegram.Send("Хорошей дороги.")
+		// telegram.Send("Хорошей дороги.")
 		return nil
 	})
 	m.Event("home").To("home").From("nowhere")

@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"math/rand"
 	"time"
 
@@ -36,6 +35,7 @@ type Shodan struct {
 }
 
 func NewShodan() *Shodan {
+	rand.Seed(time.Now().UnixNano())
 	s := Shodan{}
 	s.Machines = map[string]*transition.StateMachine{}
 	s.States = map[string]transition.Stater{}
@@ -46,10 +46,19 @@ func NewShodan() *Shodan {
 			"Я уже работаю, а ты?",
 		},
 		"good weather": ShodanString{
-			"Ура погода вновь отличная!\n Уруру. Shodan",
+			"Ура погода вновь отличная! Уруру.",
 		},
 		"bad weather": ShodanString{
-			"Погода ухудшилась.\n Мне очень жаль. Shodan",
+			"Погода ухудшилась. Мне очень жаль.",
+		},
+		"at home": ShodanString{
+			"Ты наконец дома, ура!",
+		},
+		"at home, no pc": ShodanString{
+			"Ты 15 минут дома, а комп не включен. Все в порядке?",
+		},
+		"good way": ShodanString{
+			"Хорошей дороги.",
 		},
 	}
 
@@ -96,7 +105,11 @@ func (s *Shodan) GetString(name string) string {
 }
 
 func (s *Shodan) Say(name string) {
-	telegram.Send(s.GetString(name))
+	if s.Strings[name] != nil {
+		telegram.Send(s.GetString(name))
+	} else {
+		telegram.Send(name)
+	}
 }
 
 func (s *Shodan) Serve() {
@@ -128,16 +141,17 @@ func (s *Shodan) Serve() {
 		// TODO: start notification after 10 minutes after deadline
 		// }
 		case w := <-wchan:
-			log.Println("Street weather:", fmt.Sprintf("%s - %v°", w.Weather, w.TempC))
 			ws := personal.GetWeatherIsOk(w)
-			log.Println("And its good:", ws)
 			var event string
 			if ws {
 				event = "to_good"
 			} else {
 				event = "to_bad"
 			}
-			s.Machines["weather"].Trigger(event, s.States["weather"], nil)
+			err := s.Machines["weather"].Trigger(event, s.States["weather"], nil)
+			if err == nil {
+				s.Say(fmt.Sprintf("%s - %v°", w.Weather, w.TempC))
+			}
 		case p := <-pchan:
 			s.Machines["place"].Trigger(p.Name, s.States["place"], nil)
 			// ps := personal.GetPlaceIsOk(p.Place)
