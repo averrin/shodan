@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/jinzhu/gorm"
+	_ "github.com/jinzhu/gorm/dialects/sqlite"
 	"github.com/qor/transition"
 )
 
@@ -63,7 +64,7 @@ func NewPlaceMachine(state *PlaceState, shodan *Shodan) *transition.StateMachine
 	})
 	m.State("work").Exit(func(state interface{}, tx *gorm.DB) error {
 		// s := state.(*PlaceState)
-		// telegram.Send("Хорошей дороги.")
+		shodan.Flags["late at work"] = false
 		return nil
 	})
 	m.Event("home").To("home").From("nowhere")
@@ -75,6 +76,28 @@ func NewPlaceMachine(state *PlaceState, shodan *Shodan) *transition.StateMachine
 	return m
 }
 
+func NewDayTimeMachine(state *DayTimeState, shodan *Shodan) *transition.StateMachine {
+	m := transition.New(state)
+	m.Initial("day")
+
+	m.State("day")
+	m.Event("day").To("day").From("morning")
+
+	m.State("night")
+	m.Event("night").To("night").From("evening")
+
+	m.State("evening")
+	m.Event("evening").To("evening").From("day")
+
+	m.State("morning")
+	m.Event("morning").To("morning").From("night")
+	return m
+}
+
 type PlaceState struct {
+	transition.Transition
+}
+
+type DayTimeState struct {
 	transition.Transition
 }

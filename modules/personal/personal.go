@@ -37,16 +37,16 @@ const (
 	AUTUMN
 )
 
-func (Personal) GetDaytime() (daytime Daytime) {
+func (Personal) GetDaytime() (daytime string) {
 	now := time.Now()
 	h := now.Hour()
-	daytime = DAY
+	daytime = "day"
 	if h < 12 && h >= 5 {
-		daytime = MORNING
+		daytime = "morning"
 	} else if h >= 19 && h < 23 {
-		daytime = EVENING
+		daytime = "evening"
 	} else if h >= 23 || h < 5 {
-		daytime = NIGHT
+		daytime = "night"
 	}
 	return daytime
 }
@@ -82,7 +82,7 @@ func (p Personal) GetPlaceIsOk(place Place) bool {
 	if place == WORK && day != WORKDAY {
 		return false
 	}
-	if place != HOME && daytime == NIGHT {
+	if place != HOME && daytime == "night" {
 		return false
 	}
 	return true

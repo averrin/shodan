@@ -5,12 +5,14 @@ import (
 	"math/rand"
 	"time"
 
+	at "./modules/attendance/"
 	p "./modules/personal/"
 	pb "./modules/pushbullet/"
 	sf "./modules/sparkfun/"
 	tv "./modules/teamviewer/"
 	tg "./modules/telegram/"
 	wu "./modules/weather/"
+	"github.com/jinzhu/gorm"
 	"github.com/qor/transition"
 	"github.com/spf13/viper"
 )
@@ -21,6 +23,7 @@ var teamviewer tv.TeamViewer
 var weather wu.WUnderground
 var sparkfun sf.SparkFun
 var personal p.Personal
+var attendance *at.Info
 
 type ShodanString []string
 
@@ -29,16 +32,28 @@ func (s ShodanString) String() string {
 }
 
 type Shodan struct {
-	Strings  map[string]ShodanString
-	Machines map[string]*transition.StateMachine
-	States   map[string]transition.Stater
+	Strings   map[string]ShodanString
+	Machines  map[string]*transition.StateMachine
+	States    map[string]transition.Stater
+	Flags     map[string]bool
+	LastPlace string
+	DB        *gorm.DB
 }
 
 func NewShodan() *Shodan {
-	rand.Seed(time.Now().UnixNano())
 	s := Shodan{}
+	db, err := gorm.Open("sqlite3", "test.db")
+	if err != nil {
+		panic("failed to connect database")
+	}
+	s.DB = db
+
+	rand.Seed(time.Now().UnixNano())
 	s.Machines = map[string]*transition.StateMachine{}
 	s.States = map[string]transition.Stater{}
+	s.Flags = map[string]bool{
+		"late at work": false,
+	}
 	s.Strings = map[string]ShodanString{
 		"hello": ShodanString{
 			"Привет, я включилась.",
@@ -59,6 +74,15 @@ func NewShodan() *Shodan {
 		},
 		"good way": ShodanString{
 			"Хорошей дороги.",
+			"Веди аккуратно.",
+		},
+		"go home": ShodanString{
+			"Ты это чего еще на работе?",
+			"Эй! Марш домой!",
+		},
+		"wrong place": ShodanString{
+			"Эй, с тобой все в порядке?",
+			"Что-то ты где-то не там, где должен быть, не?",
 		},
 	}
 
@@ -66,37 +90,25 @@ func NewShodan() *Shodan {
 	personal = p.Connect(viper.Get("personal"))
 	pushbullet = pb.Connect(viper.GetStringMapString("pushbullet"))
 	sparkfun = sf.Connect(viper.GetStringMap("sparkfun"))
-	// attendance := at.Connect(viper.GetStringMapString("attendance")).GetAttendance()
+	attendance = at.Connect(viper.GetStringMapString("attendance")).GetAttendance()
 	telegram = tg.Connect(viper.GetStringMapString("telegram"))
 
 	teamviewer = tv.Connect(viper.GetStringMapString("teamviewer"))
-
-	// tchan := make(chan time.Duration)
-	// go func(c chan time.Duration) {
-	// 	for {
-	// 		_, _, sinceDI, _, _ := attendance.GetHomeTime()
-	// 		c <- sinceDI
-	// 		time.Sleep(1 * time.Minute)
-	// 	}
-	// }(tchan)
 
 	weatherState := BinaryState{
 		"good weather", "bad weather",
 		transition.Transition{},
 	}
 	s.States["weather"] = &weatherState
-	wm := NewBinaryMachine(&weatherState, &s)
-	s.Machines["weather"] = wm
-	// placeState := BinaryState{
-	// 	"Фух, я волновалась.", "Уруру. Shodan",
-	// 	"Эй, с тобой все в порядке?", "Твоя Shodan",
-	// 	transition.Transition{},
-	// }
-	// pm := NewBinaryMachine(&placeState)
+	s.Machines["weather"] = NewBinaryMachine(&weatherState, &s)
+
 	ps := PlaceState{}
 	s.States["place"] = &ps
-	m := NewPlaceMachine(&ps, &s)
-	s.Machines["place"] = m
+	s.Machines["place"] = NewPlaceMachine(&ps, &s)
+
+	dts := DayTimeState{}
+	s.States["daytime"] = &dts
+	s.Machines["daytime"] = NewDayTimeMachine(&dts, &s)
 	return &s
 }
 
@@ -113,6 +125,15 @@ func (s *Shodan) Say(name string) {
 }
 
 func (s *Shodan) Serve() {
+	tchan := make(chan time.Duration)
+	go func(c chan time.Duration) {
+		for {
+			_, _, sinceDI, _, _ := attendance.GetHomeTime()
+			c <- sinceDI
+			time.Sleep(3 * time.Minute)
+		}
+	}(tchan)
+
 	wchan := make(chan wu.Weather)
 	go func(c chan wu.Weather) {
 		for {
@@ -126,6 +147,7 @@ func (s *Shodan) Serve() {
 		for {
 			place := sparkfun.GetWhereIAm()
 			if place.Name != "" {
+				s.LastPlace = place.Name
 				c <- place
 			}
 			time.Sleep(1 * time.Minute)
@@ -135,13 +157,17 @@ func (s *Shodan) Serve() {
 	s.Say("hello")
 	for {
 		select {
-		// case t := <-tchan:
-		// p := <-pchan
-		// if t.Minutes() < 1 && p.Place == sf.WORK {
-		// pushbullet.SendPush("Ты это чего еще на работе?", "Марш домой!")
-		// TODO: add machine for only one notifucation
-		// TODO: start notification after 10 minutes after deadline
-		// }
+		case t := <-tchan:
+			s.Machines["daytime"].Trigger(personal.GetDaytime(), s.States["daytime"], s.DB)
+			if t.Minutes() < 1 && s.LastPlace == "work" && s.Flags["late at work"] != true {
+				go func() {
+					s.Flags["late at work"] = true
+					time.Sleep(10 * time.Minute)
+					if s.LastPlace == "work" {
+						s.Say("go home")
+					}
+				}()
+			}
 		case w := <-wchan:
 			ws := personal.GetWeatherIsOk(w)
 			var event string
@@ -150,21 +176,25 @@ func (s *Shodan) Serve() {
 			} else {
 				event = "to_bad"
 			}
-			err := s.Machines["weather"].Trigger(event, s.States["weather"], nil)
+			err := s.Machines["weather"].Trigger(event, s.States["weather"], s.DB)
 			if err == nil {
 				s.Say(fmt.Sprintf("%s - %v°", w.Weather, w.TempC))
 			}
 		case p := <-pchan:
-			s.Machines["place"].Trigger(p.Name, s.States["place"], nil)
-			// ps := personal.GetPlaceIsOk(p.Place)
-			// log.Println("Im on my place: ", ps)
-			// var event string
-			// if ps {
-			// 	event = "to_good"
-			// } else {
-			// 	event = "to_bad"
-			// }
-			// pm.Trigger(event, &placeState, nil)
+			err := s.Machines["place"].Trigger(p.Name, s.States["place"], s.DB)
+			if err == nil {
+				s.Flags["wrong place"] = false
+			}
+			ps := personal.GetPlaceIsOk(p.Place)
+			if !ps && s.Flags["wrong place"] != true {
+				go func() {
+					s.Flags["wrong place"] = true
+					time.Sleep(10 * time.Minute)
+					if s.LastPlace == p.Name {
+						s.Say("wrong place")
+					}
+				}()
+			}
 		default:
 		}
 	}
