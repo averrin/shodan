@@ -3,7 +3,7 @@ package personal
 import (
 	"time"
 
-	wu "../weather/"
+	wu "github.com/averrin/shodan/modules/weather"
 )
 
 type Personal struct{}

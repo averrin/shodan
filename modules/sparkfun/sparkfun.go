@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"time"
 
-	p "../personal/"
+	p "github.com/averrin/shodan/modules/personal"
 )
 
 const sfURL = "https://data.sparkfun.com"
