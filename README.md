@@ -1,3 +1,3 @@
 # shodan
 
-My data provider
+My small AI - smart home controller
