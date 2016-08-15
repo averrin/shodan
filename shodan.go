@@ -2,14 +2,16 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"math/rand"
 	"time"
+
+	redis "gopkg.in/redis.v4"
 
 	at "github.com/averrin/shodan/modules/attendance"
 	p "github.com/averrin/shodan/modules/personal"
 	pb "github.com/averrin/shodan/modules/pushbullet"
 	sf "github.com/averrin/shodan/modules/sparkfun"
-	tv "github.com/averrin/shodan/modules/teamviewer"
 	tg "github.com/averrin/shodan/modules/telegram"
 	wu "github.com/averrin/shodan/modules/weather"
 	"github.com/jinzhu/gorm"
@@ -19,7 +21,8 @@ import (
 
 var pushbullet pb.Pushbullet
 var telegram tg.Telegram
-var teamviewer tv.TeamViewer
+
+// var teamviewer tv.TeamViewer
 var weather wu.WUnderground
 var sparkfun sf.SparkFun
 var personal p.Personal
@@ -38,15 +41,29 @@ type Shodan struct {
 	Flags     map[string]bool
 	LastPlace string
 	DB        *gorm.DB
+	Client    *redis.Client
+}
+
+func NewRedis() (client *redis.Client) {
+	client = redis.NewClient(&redis.Options{
+		Addr:     "averr.in:6379",
+		Password: "", // no password set
+		DB:       0,  // use default DB
+	})
+
+	pong, err := client.Ping().Result()
+	fmt.Println(pong, err)
+	return client
 }
 
 func NewShodan() *Shodan {
 	s := Shodan{}
-	db, err := gorm.Open("sqlite3", "test.db")
+	db, err := gorm.Open("sqlite3", "shodan.db")
 	if err != nil {
 		panic("failed to connect database")
 	}
 	s.DB = db
+	s.Client = NewRedis()
 
 	rand.Seed(time.Now().UnixNano())
 	s.Machines = map[string]*transition.StateMachine{}
@@ -59,12 +76,18 @@ func NewShodan() *Shodan {
 			"Привет, я включилась.",
 			"О, уже утро?",
 			"Я уже работаю, а ты?",
+			"Прямо хочется что-нить делать.",
+			"Бип-бип. Бип=)",
 		},
 		"good weather": ShodanString{
 			"Ура погода вновь отличная! Уруру.",
+			"Можно идти гулять.",
+			"На улице стало приличнее",
 		},
 		"bad weather": ShodanString{
 			"Погода ухудшилась. Мне очень жаль.",
+			"Что-то хрень какая-то на улице",
+			"Посмотрела погоду, не понравилось",
 		},
 		"at home": ShodanString{
 			"Ты наконец дома, ура!",
@@ -93,7 +116,7 @@ func NewShodan() *Shodan {
 	attendance = at.Connect(viper.GetStringMapString("attendance")).GetAttendance()
 	telegram = tg.Connect(viper.GetStringMapString("telegram"))
 
-	teamviewer = tv.Connect(viper.GetStringMapString("teamviewer"))
+	// teamviewer = tv.Connect(viper.GetStringMapString("teamviewer"))
 
 	weatherState := BinaryState{
 		"good weather", "bad weather",
@@ -177,6 +200,7 @@ func (s *Shodan) Serve() {
 				event = "to_bad"
 			}
 			err := s.Machines["weather"].Trigger(event, s.States["weather"], s.DB)
+			log.Println(err)
 			if err == nil {
 				s.Say(fmt.Sprintf("%s - %v°", w.Weather, w.TempC))
 			}

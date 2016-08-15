@@ -48,16 +48,16 @@ func NewPlaceMachine(state *PlaceState, shodan *Shodan) *transition.StateMachine
 	m.State("village")
 	m.State("pavel")
 	m.State("home").Enter(func(state interface{}, tx *gorm.DB) error {
-		s := state.(*PlaceState)
+		// s := state.(*PlaceState)
 		shodan.Say("at home")
-		if !teamviewer.GetPCStatus() {
-			go func() {
-				time.Sleep(15 * time.Minute)
-				if !teamviewer.GetPCStatus() && s.GetState() == "home" {
-					shodan.Say("at home, no pc")
-				}
-			}()
-		}
+		// if !teamviewer.GetPCStatus() {
+		// 	go func() {
+		// 		time.Sleep(15 * time.Minute)
+		// 		if !teamviewer.GetPCStatus() && s.GetState() == "home" {
+		// 			shodan.Say("at home, no pc")
+		// 		}
+		// 	}()
+		// }
 		return nil
 	}).Exit(func(state interface{}, tx *gorm.DB) error {
 		return nil
