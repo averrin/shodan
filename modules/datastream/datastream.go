@@ -3,6 +3,7 @@ package datastream
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"strconv"
 	"time"
 
@@ -14,11 +15,12 @@ type DataStream map[string]string
 var client *redis.Client
 
 func Connect(creds map[string]string) *DataStream {
-	tg := DataStream{}
+	ds := DataStream{}
 	for k, v := range creds {
-		tg[k] = v
+		ds[k] = v
 	}
-	return &tg
+	ds.NewRedis()
+	return &ds
 }
 
 func (ds *DataStream) NewRedis() {
@@ -40,7 +42,11 @@ type Point struct {
 }
 
 func (ds *DataStream) GetWhereIAm() (point Point) {
-	raw, _ := client.Get("whereiam").Bytes()
+	raw, err := client.Get("whereiam").Bytes()
+	if err != nil {
+		log.Print(err)
+		return point
+	}
 	json.Unmarshal(raw, point)
 	return point
 }
