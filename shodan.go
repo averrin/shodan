@@ -175,6 +175,7 @@ func (s *Shodan) Serve() {
 		log.Println(http.ListenAndServe(":"+viper.GetString("port"), nil))
 	}()
 
+	datastream.Heartbeat("shodan")
 	s.Say("hello")
 	for {
 		select {
@@ -183,6 +184,8 @@ func (s *Shodan) Serve() {
 			if m == "/debug" {
 				s.Flags["debug"] = true
 				s.Say("debug on")
+			} else if m == "/whereiam" {
+				s.Say(fmt.Sprintf("U r at %s", s.States["place"].GetState()))
 			}
 		case t := <-tchan:
 			s.Machines["daytime"].Trigger(personal.GetDaytime(), s.States["daytime"], s.DB)

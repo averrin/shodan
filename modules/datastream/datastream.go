@@ -36,19 +36,75 @@ func (ds *DataStream) NewRedis() {
 	fmt.Println(pong, err)
 }
 
+func (ds *DataStream) Heartbeat(key string) {
+	ticker := time.NewTicker(2 * time.Second)
+	channel := fmt.Sprintf("heartbeat:%s", key)
+	go func() {
+		for _ = range ticker.C {
+			client.Publish(channel, fmt.Sprintf("%v", time.Now()))
+		}
+	}()
+}
+
+func (ds *DataStream) GetHeartbeat(key string) chan string {
+	channel := fmt.Sprintf("heartbeat:%s", key)
+	pubsub, _ := client.Subscribe(channel)
+	out := make(chan string)
+	go func() {
+		defer pubsub.Close()
+		for {
+			msg, err := pubsub.ReceiveMessage()
+			if err != nil {
+				close(out)
+				break
+			}
+			out <- msg.Payload
+		}
+	}()
+	return out
+}
+
 type Point struct {
 	Name      string
 	Timestamp time.Time
 }
 
-func (ds *DataStream) GetWhereIAm() (point Point) {
-	raw, err := client.Get("whereiam").Bytes()
+type Online struct {
+	Name      string
+	Online    bool
+	Timestamp time.Time
+}
+
+type RoomTemp struct {
+	Hum       string
+	Temp      string
+	Timestamp time.Time
+}
+
+func (ds *DataStream) Get(key string, value interface{}) {
+	raw, err := client.Get(key).Bytes()
 	if err != nil {
 		log.Print(err)
-		return point
 	}
-	json.Unmarshal(raw, &point)
+	json.Unmarshal(raw, value)
+}
+
+func (ds *DataStream) Set(key string, value interface{}) {
+	raw, _ := json.Marshal(value)
+	err := client.Set(key, raw, 0).Err()
+	if err != nil {
+		log.Println(err)
+	}
+}
+
+func (ds *DataStream) GetWhereIAm() (point Point) {
+	ds.Get("whereiam", &point)
 	return point
+}
+
+func (ds *DataStream) GetRoomTemp() (temp RoomTemp) {
+	ds.Get("roomtemp", &temp)
+	return temp
 }
 
 func (ds *DataStream) SetWhereIAm(place string) {
@@ -56,9 +112,23 @@ func (ds *DataStream) SetWhereIAm(place string) {
 		Name:      place,
 		Timestamp: time.Now(),
 	}
-	raw, _ := json.Marshal(point)
-	err := client.Set("whereiam", raw, 0).Err()
-	if err != nil {
-		log.Println(err)
+	ds.Set("whereiam", point)
+}
+
+func (ds *DataStream) SetRoomTemp(temp string, hum string) {
+	point := RoomTemp{
+		Temp:      temp,
+		Hum:       hum,
+		Timestamp: time.Now(),
 	}
+	ds.Set("roomtemp", point)
+}
+
+func (ds *DataStream) SetOnline(key string, online bool) {
+	point := Online{
+		Name:      key,
+		Online:    online,
+		Timestamp: time.Now(),
+	}
+	ds.Set(key, point)
 }
