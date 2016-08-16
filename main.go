@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"log"
 
-	// at "./modules/attendance/"
-
 	"github.com/spf13/viper"
 )
 

@@ -4,14 +4,14 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"net/http"
 	"time"
-
-	redis "gopkg.in/redis.v4"
 
 	at "github.com/averrin/shodan/modules/attendance"
 	p "github.com/averrin/shodan/modules/personal"
-	pb "github.com/averrin/shodan/modules/pushbullet"
-	sf "github.com/averrin/shodan/modules/sparkfun"
+	// pb "github.com/averrin/shodan/modules/pushbullet"
+	ds "github.com/averrin/shodan/modules/datastream"
+	// sf "github.com/averrin/shodan/modules/sparkfun"
 	tg "github.com/averrin/shodan/modules/telegram"
 	wu "github.com/averrin/shodan/modules/weather"
 	"github.com/jinzhu/gorm"
@@ -19,12 +19,12 @@ import (
 	"github.com/spf13/viper"
 )
 
-var pushbullet pb.Pushbullet
+// var pushbullet pb.Pushbullet
 var telegram tg.Telegram
 
 // var teamviewer tv.TeamViewer
 var weather wu.WUnderground
-var sparkfun sf.SparkFun
+var datastream *ds.DataStream
 var personal p.Personal
 var attendance *at.Info
 
@@ -41,29 +41,15 @@ type Shodan struct {
 	Flags     map[string]bool
 	LastPlace string
 	DB        *gorm.DB
-	Client    *redis.Client
-}
-
-func NewRedis() (client *redis.Client) {
-	client = redis.NewClient(&redis.Options{
-		Addr:     "averr.in:6379",
-		Password: "", // no password set
-		DB:       0,  // use default DB
-	})
-
-	pong, err := client.Ping().Result()
-	fmt.Println(pong, err)
-	return client
 }
 
 func NewShodan() *Shodan {
 	s := Shodan{}
-	db, err := gorm.Open("sqlite3", "shodan.db")
-	if err != nil {
-		panic("failed to connect database")
-	}
-	s.DB = db
-	s.Client = NewRedis()
+	// db, err := gorm.Open("sqlite3", "shodan.db")
+	// if err != nil {
+	// 	panic("failed to connect database")
+	// }
+	s.DB = nil
 
 	rand.Seed(time.Now().UnixNano())
 	s.Machines = map[string]*transition.StateMachine{}
@@ -111,8 +97,8 @@ func NewShodan() *Shodan {
 
 	weather = wu.Connect(viper.GetStringMapString("weather"))
 	personal = p.Connect(viper.Get("personal"))
-	pushbullet = pb.Connect(viper.GetStringMapString("pushbullet"))
-	sparkfun = sf.Connect(viper.GetStringMap("sparkfun"))
+	// pushbullet = pb.Connect(viper.GetStringMapString("pushbullet"))
+	datastream = ds.Connect(viper.GetStringMapString("datastream"))
 	attendance = at.Connect(viper.GetStringMapString("attendance")).GetAttendance()
 	telegram = tg.Connect(viper.GetStringMapString("telegram"))
 
@@ -165,10 +151,10 @@ func (s *Shodan) Serve() {
 		}
 	}(wchan)
 
-	pchan := make(chan sf.Point)
-	go func(c chan sf.Point) {
+	pchan := make(chan ds.Point)
+	go func(c chan ds.Point) {
 		for {
-			place := sparkfun.GetWhereIAm()
+			place := datastream.GetWhereIAm()
 			if place.Name != "" {
 				s.LastPlace = place.Name
 				c <- place
@@ -176,6 +162,12 @@ func (s *Shodan) Serve() {
 			time.Sleep(1 * time.Minute)
 		}
 	}(pchan)
+
+	http.HandleFunc("/place/", func(w http.ResponseWriter, r *http.Request) {
+		place := r.URL.Path[len("/place/"):]
+		datastream.SetWhereIAm(place)
+	})
+	http.ListenAndServe(":80", nil)
 
 	s.Say("hello")
 	for {
@@ -209,7 +201,7 @@ func (s *Shodan) Serve() {
 			if err == nil {
 				s.Flags["wrong place"] = false
 			}
-			ps := personal.GetPlaceIsOk(p.Place)
+			ps := personal.GetPlaceIsOk(p)
 			if !ps && s.Flags["wrong place"] != true {
 				go func() {
 					s.Flags["wrong place"] = true

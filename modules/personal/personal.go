@@ -3,6 +3,7 @@ package personal
 import (
 	"time"
 
+	ds "github.com/averrin/shodan/modules/datastream"
 	wu "github.com/averrin/shodan/modules/weather"
 )
 
@@ -76,13 +77,14 @@ func (Personal) GetSeason() (season Season) {
 	return season
 }
 
-func (p Personal) GetPlaceIsOk(place Place) bool {
+func (p Personal) GetPlaceIsOk(point ds.Point) bool {
+	place := point.Name
 	day := p.GetDay()
 	daytime := p.GetDaytime()
-	if place == WORK && day != WORKDAY {
+	if place == "work" && day != WORKDAY {
 		return false
 	}
-	if place != HOME && daytime == "night" {
+	if place != "home" && daytime == "night" {
 		return false
 	}
 	return true
