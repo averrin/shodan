@@ -56,6 +56,7 @@ func NewShodan() *Shodan {
 	s.States = map[string]transition.Stater{}
 	s.Flags = map[string]bool{
 		"late at work": false,
+		"debug":        false,
 	}
 	s.Strings = map[string]ShodanString{
 		"hello": ShodanString{
@@ -163,17 +164,26 @@ func (s *Shodan) Serve() {
 		}
 	}(pchan)
 
+	ichan := make(chan string)
+	telegram.SetInbox(ichan)
+
 	http.HandleFunc("/place/", func(w http.ResponseWriter, r *http.Request) {
 		place := r.URL.Path[len("/place/"):]
 		datastream.SetWhereIAm(place)
 	})
 	go func() {
-		log.Println(http.ListenAndServe(":80", nil))
+		log.Println(http.ListenAndServe(":"+viper.GetString("port"), nil))
 	}()
 
 	s.Say("hello")
 	for {
 		select {
+		case m := <-ichan:
+			log.Println(m)
+			if m == "/debug" {
+				s.Flags["debug"] = true
+				s.Say("debug on")
+			}
 		case t := <-tchan:
 			s.Machines["daytime"].Trigger(personal.GetDaytime(), s.States["daytime"], s.DB)
 			if t.Minutes() < 1 && s.LastPlace == "work" && s.Flags["late at work"] != true {
@@ -202,7 +212,9 @@ func (s *Shodan) Serve() {
 			err := s.Machines["place"].Trigger(p.Name, s.States["place"], s.DB)
 			if err == nil {
 				s.Flags["wrong place"] = false
-				s.Say(fmt.Sprintf("New place: %s", p.Name))
+				if s.Flags["debug"] {
+					s.Say(fmt.Sprintf("New place: %s", p.Name))
+				}
 			}
 			ps := personal.GetPlaceIsOk(p)
 			if !ps && s.Flags["wrong place"] != true {

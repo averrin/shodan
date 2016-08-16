@@ -13,6 +13,7 @@ import (
 type Telegram map[string]string
 
 var messages chan string
+var inbox chan string
 var files chan *os.File
 
 func Connect(creds map[string]string) Telegram {
@@ -33,6 +34,10 @@ func (tg Telegram) SendFile(message *os.File) {
 	files <- message
 }
 
+func (tg Telegram) SetInbox(in chan string) {
+	inbox = in
+}
+
 func (tg Telegram) Serve() {
 	cidI, _ := strconv.Atoi(tg["chatID"])
 	cid := int64(cidI)
@@ -41,7 +46,7 @@ func (tg Telegram) Serve() {
 		log.Panic(err)
 	}
 
-	bot.Debug = true
+	// bot.Debug = true
 
 	// log.Printf("Authorized on account %s", bot.Self.UserName)
 
@@ -57,12 +62,17 @@ func (tg Telegram) Serve() {
 			if update.Message == nil {
 				continue
 			}
+			if inbox != nil {
+				inbox <- update.Message.Text
+			}
 			// log.Printf("[%s] %s", update.Message.From.UserName, update.Message.Text)
 			// msg := tgbotapi.NewMessage(update.Message.Chat.ID, update.Message.Text)
 			// msg.ReplyToMessageID = update.Message.MessageID
 			// bot.Send(msg)
 
-			bot.Send(tgbotapi.NewPhotoUpload(cid, tg.GetCat()))
+			if update.Message.Text == "/cat" {
+				bot.Send(tgbotapi.NewPhotoUpload(cid, tg.GetCat()))
+			}
 		// case message := <-files:
 		case message := <-messages:
 			bot.Send(tgbotapi.NewMessage(cid, message))
