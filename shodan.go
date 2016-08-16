@@ -199,9 +199,11 @@ func (s *Shodan) Serve() {
 				})
 			} else if strings.HasPrefix(m, "/cmd") {
 				tokens := strings.Split(m, " ")
-				datastream.SendCommand(ds.Command{
-					tokens[1], nil, tokens[0], "Averrin",
-				})
+				if len(tokens) >= 3 {
+					datastream.SendCommand(ds.Command{
+						tokens[2], nil, tokens[1], "Averrin",
+					})
+				}
 			}
 		case t := <-tchan:
 			s.Machines["daytime"].Trigger(personal.GetDaytime(), s.States["daytime"], s.DB)
