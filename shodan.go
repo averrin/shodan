@@ -5,6 +5,7 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
+	"strings"
 	"time"
 
 	at "github.com/averrin/shodan/modules/attendance"
@@ -171,6 +172,12 @@ func (s *Shodan) Serve() {
 		place := r.URL.Path[len("/place/"):]
 		datastream.SetWhereIAm(place)
 	})
+	http.HandleFunc("/cmd/", func(w http.ResponseWriter, r *http.Request) {
+		tokens := strings.Split(r.URL.Path[len("/cmd/"):], "/")
+		datastream.SendCommand(ds.Command{
+			tokens[1], nil, tokens[0], "Shodan",
+		})
+	})
 	go func() {
 		log.Println(http.ListenAndServe(":"+viper.GetString("port"), nil))
 	}()
@@ -188,7 +195,12 @@ func (s *Shodan) Serve() {
 				s.Say(fmt.Sprintf("U r at %s", s.States["place"].GetState()))
 			} else if m == "/restart gideon" {
 				datastream.SendCommand(ds.Command{
-					"kill", nil, "gideon", "shodan",
+					"kill", nil, "gideon", "Averrin",
+				})
+			} else if strings.HasPrefix(m, "/cmd") {
+				tokens := strings.Split(m, " ")
+				datastream.SendCommand(ds.Command{
+					tokens[1], nil, tokens[0], "Averrin",
 				})
 			}
 		case t := <-tchan:
