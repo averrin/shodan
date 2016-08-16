@@ -47,7 +47,7 @@ func (ds *DataStream) GetWhereIAm() (point Point) {
 		log.Print(err)
 		return point
 	}
-	json.Unmarshal(raw, point)
+	json.Unmarshal(raw, &point)
 	return point
 }
 
@@ -57,5 +57,8 @@ func (ds *DataStream) SetWhereIAm(place string) {
 		Timestamp: time.Now(),
 	}
 	raw, _ := json.Marshal(point)
-	client.Set("whereiam", raw, 0)
+	err := client.Set("whereiam", raw, 0).Err()
+	if err != nil {
+		log.Println(err)
+	}
 }

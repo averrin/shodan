@@ -159,7 +159,7 @@ func (s *Shodan) Serve() {
 				s.LastPlace = place.Name
 				c <- place
 			}
-			time.Sleep(1 * time.Minute)
+			time.Sleep(10 * time.Second)
 		}
 	}(pchan)
 
@@ -167,7 +167,9 @@ func (s *Shodan) Serve() {
 		place := r.URL.Path[len("/place/"):]
 		datastream.SetWhereIAm(place)
 	})
-	http.ListenAndServe(":80", nil)
+	go func() {
+		log.Println(http.ListenAndServe(":80", nil))
+	}()
 
 	s.Say("hello")
 	for {
@@ -200,6 +202,7 @@ func (s *Shodan) Serve() {
 			err := s.Machines["place"].Trigger(p.Name, s.States["place"], s.DB)
 			if err == nil {
 				s.Flags["wrong place"] = false
+				s.Say(fmt.Sprintf("New place: %s", p.Name))
 			}
 			ps := personal.GetPlaceIsOk(p)
 			if !ps && s.Flags["wrong place"] != true {
