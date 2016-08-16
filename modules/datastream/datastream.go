@@ -61,12 +61,11 @@ func (ds *DataStream) GetHeartbeat(key string) chan bool {
 				close(out)
 				break
 			}
-			log.Print(lt.UnmarshalText([]byte(msg.Payload)))
+			lt.UnmarshalText([]byte(msg.Payload))
 		}
 	}()
 	go func() {
 		for _ = range ticker.C {
-			log.Println(lt, time.Now())
 			if time.Now().Sub(lt) > time.Duration(3*time.Second) {
 				out <- false
 			} else {
@@ -144,4 +143,38 @@ func (ds *DataStream) SetOnline(key string, online bool) {
 		Timestamp: time.Now(),
 	}
 	ds.Set(key, point)
+}
+
+type Command struct {
+	Name     string
+	Args     map[string]interface{}
+	Reciever string
+	Sender   string
+}
+
+func (ds *DataStream) GetCommands(key string) (out chan Command) {
+	channel := fmt.Sprintf("commands:%s", key)
+	pubsub, _ := client.Subscribe(channel)
+	go func() {
+		defer pubsub.Close()
+		for {
+			msg, err := pubsub.ReceiveMessage()
+			if err != nil {
+				close(out)
+				break
+			}
+			c := Command{}
+			err = json.Unmarshal([]byte(msg.Payload), c)
+			if err != nil {
+				log.Println(err)
+			}
+			out <- c
+		}
+	}()
+	return out
+}
+
+func (ds *DataStream) SendCommand(cmd Command) {
+	raw, _ := json.Marshal(cmd)
+	client.Publish(fmt.Sprintf("commands:%s", cmd.Reciever), string(raw))
 }

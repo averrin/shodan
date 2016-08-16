@@ -186,6 +186,10 @@ func (s *Shodan) Serve() {
 				s.Say("debug on")
 			} else if m == "/whereiam" {
 				s.Say(fmt.Sprintf("U r at %s", s.States["place"].GetState()))
+			} else if m == "/restart gideon" {
+				datastream.SendCommand(ds.Command{
+					"kill", nil, "gideon", "shodan",
+				})
 			}
 		case t := <-tchan:
 			s.Machines["daytime"].Trigger(personal.GetDaytime(), s.States["daytime"], s.DB)
