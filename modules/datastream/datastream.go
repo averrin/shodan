@@ -41,15 +41,18 @@ func (ds *DataStream) Heartbeat(key string) {
 	channel := fmt.Sprintf("heartbeat:%s", key)
 	go func() {
 		for _ = range ticker.C {
-			client.Publish(channel, fmt.Sprintf("%v", time.Now()))
+			now, _ := time.Now().MarshalText()
+			client.Publish(channel, string(now))
 		}
 	}()
 }
 
-func (ds *DataStream) GetHeartbeat(key string) chan string {
+func (ds *DataStream) GetHeartbeat(key string) chan bool {
 	channel := fmt.Sprintf("heartbeat:%s", key)
 	pubsub, _ := client.Subscribe(channel)
-	out := make(chan string)
+	out := make(chan bool)
+	ticker := time.NewTicker(2 * time.Second)
+	var lt time.Time
 	go func() {
 		defer pubsub.Close()
 		for {
@@ -58,7 +61,17 @@ func (ds *DataStream) GetHeartbeat(key string) chan string {
 				close(out)
 				break
 			}
-			out <- msg.Payload
+			log.Print(lt.UnmarshalText([]byte(msg.Payload)))
+		}
+	}()
+	go func() {
+		for _ = range ticker.C {
+			log.Println(lt, time.Now())
+			if time.Now().Sub(lt) > time.Duration(3*time.Second) {
+				out <- false
+			} else {
+				out <- true
+			}
 		}
 	}()
 	return out
