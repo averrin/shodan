@@ -155,6 +155,7 @@ type Command struct {
 func (ds *DataStream) GetCommands(key string) (out chan Command) {
 	channel := fmt.Sprintf("commands:%s", key)
 	pubsub, _ := client.Subscribe(channel)
+	out = make(chan Command)
 	go func() {
 		defer pubsub.Close()
 		for {
@@ -164,9 +165,10 @@ func (ds *DataStream) GetCommands(key string) (out chan Command) {
 				break
 			}
 			c := Command{}
-			err = json.Unmarshal([]byte(msg.Payload), c)
+			err = json.Unmarshal([]byte(msg.Payload), &c)
 			if err != nil {
 				log.Println(err)
+				continue
 			}
 			out <- c
 		}
