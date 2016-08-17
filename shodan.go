@@ -12,8 +12,8 @@ import (
 	p "github.com/averrin/shodan/modules/personal"
 	// pb "github.com/averrin/shodan/modules/pushbullet"
 	ds "github.com/averrin/shodan/modules/datastream"
-	eg "github.com/averrin/shodan/modules/eventghost"
-	sh "github.com/averrin/shodan/modules/smarthome"
+	// eg "github.com/averrin/shodan/modules/eventghost"
+	// sh "github.com/averrin/shodan/modules/smarthome"
 	tg "github.com/averrin/shodan/modules/telegram"
 	wu "github.com/averrin/shodan/modules/weather"
 	"github.com/jinzhu/gorm"
@@ -24,12 +24,13 @@ import (
 // var pushbullet pb.Pushbullet
 var telegram tg.Telegram
 
-var smarthome sh.SmartHome
 var weather wu.WUnderground
 var datastream *ds.DataStream
 var personal p.Personal
 var attendance *at.Info
-var eventghost *eg.EventGhost
+
+// var eventghost *eg.EventGhost
+// var smarthome sh.SmartHome
 
 type ShodanString []string
 
@@ -72,7 +73,7 @@ func NewShodan() *Shodan {
 		"good weather": ShodanString{
 			"Ура погода вновь отличная! Уруру.",
 			"Можно идти гулять.",
-			"На улице стало приличнее",
+			"На улице стало приличнее.",
 		},
 		"bad weather": ShodanString{
 			"Погода ухудшилась. Мне очень жаль.",
@@ -81,9 +82,11 @@ func NewShodan() *Shodan {
 		},
 		"at home": ShodanString{
 			"Ты наконец дома, ура!",
+			"Дополз?",
 		},
 		"at home, no pc": ShodanString{
 			"Ты 15 минут дома, а комп не включен. Все в порядке?",
+			"Чего комп не включил?",
 		},
 		"good way": ShodanString{
 			"Хорошей дороги.",
@@ -105,8 +108,8 @@ func NewShodan() *Shodan {
 	datastream = ds.Connect(viper.GetStringMapString("datastream"))
 	attendance = at.Connect(viper.GetStringMapString("attendance")).GetAttendance()
 	telegram = tg.Connect(viper.GetStringMapString("telegram"))
-	smarthome = sh.Connect(viper.GetStringMapString("smarthome"))
-	eventghost = eg.Connect(viper.GetStringMapString("eventghost"))
+	// smarthome = sh.Connect(viper.GetStringMapString("smarthome"))
+	// eventghost = eg.Connect(viper.GetStringMapString("eventghost"))
 
 	weatherState := BinaryState{
 		"good weather", "bad weather",
