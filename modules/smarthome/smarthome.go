@@ -74,7 +74,7 @@ func (sh SmartHome) Get(url string, value interface{}) {
 
 	defer response.Body.Close()
 	body, _ := ioutil.ReadAll(response.Body)
-	err = json.Unmarshal(body, &value)
+	err = json.Unmarshal(body, value)
 	if err != nil {
 		log.Print(string(body))
 		log.Fatal(err)
@@ -84,21 +84,22 @@ func (sh SmartHome) Get(url string, value interface{}) {
 func (sh SmartHome) GetDevices() (devices Devices) {
 	devices = Devices{}
 	url := fmt.Sprintf("http://%s/devices", sh["gateway"])
-	sh.Get(url, devices)
+	sh.Get(url, &devices)
 	return devices
 }
 
 func (sh SmartHome) GetCodes() (codes Codes) {
 	codes = Codes{}
 	url := fmt.Sprintf("http://%s/codes", sh["gateway"])
-	sh.Get(url, codes)
+	log.Println(url)
+	sh.Get(url, &codes)
 	return codes
 }
 
 func (sh SmartHome) SendCode(code Code) (r Response) {
 	r = Response{}
 	url := fmt.Sprintf("http://%s/send?deviceMac=%s&codeId=%s", sh["gateway"], code.LearnedByMac, code.ID)
-	sh.Get(url, r)
+	sh.Get(url, &r)
 	return r
 }
 
