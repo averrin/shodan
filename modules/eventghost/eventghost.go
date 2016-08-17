@@ -22,7 +22,7 @@ func Connect(creds map[string]string) *EventGhost {
 func (eg *EventGhost) Connect() {
 	creds := *eg
 	var err error
-	socket, err = websocket.Dial("ws://"+creds["host"], "", creds["host"])
+	socket, err = websocket.Dial("ws://"+creds["host"], "", "http://"+creds["host"])
 	if err != nil {
 		log.Println(err)
 	}
