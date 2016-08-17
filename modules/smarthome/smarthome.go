@@ -50,6 +50,7 @@ type Codes []Code
 type SmartHome map[string]string
 
 func Connect(creds map[string]string) (sh SmartHome) {
+	sh = SmartHome{}
 	for k, v := range creds {
 		sh[k] = v
 	}

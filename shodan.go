@@ -12,6 +12,7 @@ import (
 	p "github.com/averrin/shodan/modules/personal"
 	// pb "github.com/averrin/shodan/modules/pushbullet"
 	ds "github.com/averrin/shodan/modules/datastream"
+	eg "github.com/averrin/shodan/modules/eventghost"
 	sh "github.com/averrin/shodan/modules/smarthome"
 	tg "github.com/averrin/shodan/modules/telegram"
 	wu "github.com/averrin/shodan/modules/weather"
@@ -28,6 +29,7 @@ var weather wu.WUnderground
 var datastream *ds.DataStream
 var personal p.Personal
 var attendance *at.Info
+var eventghost *eg.EventGhost
 
 type ShodanString []string
 
@@ -104,6 +106,7 @@ func NewShodan() *Shodan {
 	attendance = at.Connect(viper.GetStringMapString("attendance")).GetAttendance()
 	telegram = tg.Connect(viper.GetStringMapString("telegram"))
 	smarthome = sh.Connect(viper.GetStringMapString("smarthome"))
+	eventghost = eg.Connect(viper.GetStringMapString("eventghost"))
 
 	weatherState := BinaryState{
 		"good weather", "bad weather",
