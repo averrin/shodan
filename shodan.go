@@ -12,7 +12,7 @@ import (
 	p "github.com/averrin/shodan/modules/personal"
 	// pb "github.com/averrin/shodan/modules/pushbullet"
 	ds "github.com/averrin/shodan/modules/datastream"
-	// sf "github.com/averrin/shodan/modules/sparkfun"
+	sh "github.com/averrin/shodan/modules/smarthome"
 	tg "github.com/averrin/shodan/modules/telegram"
 	wu "github.com/averrin/shodan/modules/weather"
 	"github.com/jinzhu/gorm"
@@ -23,7 +23,7 @@ import (
 // var pushbullet pb.Pushbullet
 var telegram tg.Telegram
 
-// var teamviewer tv.TeamViewer
+var smarthome sh.SmartHome
 var weather wu.WUnderground
 var datastream *ds.DataStream
 var personal p.Personal
@@ -103,8 +103,7 @@ func NewShodan() *Shodan {
 	datastream = ds.Connect(viper.GetStringMapString("datastream"))
 	attendance = at.Connect(viper.GetStringMapString("attendance")).GetAttendance()
 	telegram = tg.Connect(viper.GetStringMapString("telegram"))
-
-	// teamviewer = tv.Connect(viper.GetStringMapString("teamviewer"))
+	smarthome = sh.Connect(viper.GetStringMapString("smarthome"))
 
 	weatherState := BinaryState{
 		"good weather", "bad weather",

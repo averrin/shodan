@@ -96,8 +96,7 @@ func Connect(creds map[string]string) WUnderground {
 	return wu
 }
 
-func (wu WUnderground) GetWeather() Weather {
-	var w Weather
+func (wu WUnderground) GetWeather() (w Weather) {
 	url := fmt.Sprintf(wuURL, wu["apiKey"], wu["location"])
 	response, err := http.Get(url)
 	defer response.Body.Close()
