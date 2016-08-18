@@ -100,6 +100,14 @@ func NewShodan() *Shodan {
 			"Эй, с тобой все в порядке?",
 			"Что-то ты где-то не там, где должен быть, не?",
 		},
+		"low battery": ShodanString{
+			"Батарейка на телефоне садится.",
+			"Телефон пора зарядить.",
+		},
+		"good morning": ShodanString{
+			"Утречко.",
+			"Давай, просыпайся, соня!",
+		},
 	}
 
 	weather = wu.Connect(viper.GetStringMapString("weather"))
@@ -173,20 +181,7 @@ func (s *Shodan) Serve() {
 	ichan := make(chan string)
 	telegram.SetInbox(ichan)
 
-	http.HandleFunc("/place/", func(w http.ResponseWriter, r *http.Request) {
-		place := r.URL.Path[len("/place/"):]
-		datastream.SetWhereIAm(place)
-	})
-	http.HandleFunc("/cmd/", func(w http.ResponseWriter, r *http.Request) {
-		tokens := strings.Split(r.URL.Path[len("/cmd/"):], "/")
-		datastream.SendCommand(ds.Command{
-			tokens[1], nil, tokens[0], "Shodan",
-		})
-	})
-	go func() {
-		log.Println(http.ListenAndServe(":"+viper.GetString("port"), nil))
-	}()
-
+	s.initAPI()
 	datastream.Heartbeat("shodan")
 	s.Say("hello")
 	for {
@@ -196,6 +191,9 @@ func (s *Shodan) Serve() {
 			if m == "/debug" {
 				s.Flags["debug"] = true
 				s.Say("debug on")
+			} else if m == "/w" {
+				w := weather.GetWeather()
+				s.Say(fmt.Sprintf("%s - %v°", w.Weather, w.TempC))
 			} else if m == "/whereiam" {
 				s.Say(fmt.Sprintf("U r at %s", s.States["place"].GetState()))
 			} else if m == "/restart gideon" {
@@ -255,4 +253,37 @@ func (s *Shodan) Serve() {
 		default:
 		}
 	}
+}
+
+func (s *Shodan) initAPI() {
+	http.HandleFunc("/battery/", func(w http.ResponseWriter, r *http.Request) {
+		level := r.URL.Path[len("/battery/"):]
+		datastream.SetValue("battery", level)
+		if level == "low" {
+			s.Say("low battery")
+		}
+	})
+	http.HandleFunc("/dream/", func(w http.ResponseWriter, r *http.Request) {
+		status := r.URL.Path[len("/dream/"):]
+		datastream.SetValue("dream", status)
+		if status == "awake" {
+			go func() {
+				time.Sleep(3 * time.Minute)
+				s.Say("good morning")
+			}()
+		}
+	})
+	http.HandleFunc("/place/", func(w http.ResponseWriter, r *http.Request) {
+		place := r.URL.Path[len("/place/"):]
+		datastream.SetWhereIAm(place)
+	})
+	http.HandleFunc("/cmd/", func(w http.ResponseWriter, r *http.Request) {
+		tokens := strings.Split(r.URL.Path[len("/cmd/"):], "/")
+		datastream.SendCommand(ds.Command{
+			tokens[1], nil, tokens[0], "Shodan",
+		})
+	})
+	go func() {
+		log.Println(http.ListenAndServe(":"+viper.GetString("port"), nil))
+	}()
 }

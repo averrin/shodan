@@ -81,6 +81,11 @@ type Point struct {
 	Timestamp time.Time
 }
 
+type Value struct {
+	Value     interface{}
+	Timestamp time.Time
+}
+
 type Online struct {
 	Name      string
 	Online    bool
@@ -125,6 +130,14 @@ func (ds *DataStream) SetWhereIAm(place string) {
 		Timestamp: time.Now(),
 	}
 	ds.Set("whereiam", point)
+}
+
+func (ds *DataStream) SetValue(key string, value string) {
+	v := Value{
+		Value:     value,
+		Timestamp: time.Now(),
+	}
+	ds.Set(key, v)
 }
 
 func (ds *DataStream) SetRoomTemp(temp string, hum string) {
