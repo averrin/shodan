@@ -91,7 +91,6 @@ func (sh SmartHome) GetDevices() (devices Devices) {
 func (sh SmartHome) GetCodes() (codes Codes) {
 	codes = Codes{}
 	url := fmt.Sprintf("http://%s/codes", sh["gateway"])
-	log.Println(url)
 	sh.Get(url, &codes)
 	return codes
 }

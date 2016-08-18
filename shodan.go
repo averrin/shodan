@@ -257,7 +257,10 @@ func (s *Shodan) initAPI() {
 	http.HandleFunc("/place/", func(w http.ResponseWriter, r *http.Request) {
 		place := r.URL.Path[len("/place/"):]
 		datastream.SetWhereIAm(place)
-		s.Say("U are at " + place)
+		err := s.Machines["place"].Trigger(place, s.States["place"], s.DB)
+		if err != nil {
+			log.Println(err)
+		}
 	})
 	http.HandleFunc("/cmd/", func(w http.ResponseWriter, r *http.Request) {
 		tokens := strings.Split(r.URL.Path[len("/cmd/"):], "/")
@@ -296,6 +299,17 @@ func (s *Shodan) dispatchMessages(m string) {
 		tokens := strings.Split(m, " ")
 		if len(tokens) >= 2 {
 			s.LightOn(tokens[1])
+		}
+		return
+	}
+	if strings.HasPrefix(m, "/imat") {
+		tokens := strings.Split(m, " ")
+		if len(tokens) >= 2 {
+			datastream.SetWhereIAm(tokens[1])
+			err := s.Machines["place"].Trigger(tokens[1], s.States["place"], s.DB)
+			if err != nil {
+				log.Println(err)
+			}
 		}
 		return
 	}
