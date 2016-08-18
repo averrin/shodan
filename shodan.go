@@ -85,8 +85,8 @@ func NewShodan() *Shodan {
 			"Дополз?",
 		},
 		"at home, no pc": ShodanString{
-			"Ты 15 минут дома, а комп не включен. Все в порядке?",
-			"Чего комп не включил?",
+			"Ты уже 15 минут дома, а комп не включен. Все в порядке?",
+			"А чего комп не включил?",
 		},
 		"good way": ShodanString{
 			"Хорошей дороги.",
@@ -188,26 +188,7 @@ func (s *Shodan) Serve() {
 		select {
 		case m := <-ichan:
 			log.Println(m)
-			if m == "/debug" {
-				s.Flags["debug"] = true
-				s.Say("debug on")
-			} else if m == "/w" {
-				w := weather.GetWeather()
-				s.Say(fmt.Sprintf("%s - %v°", w.Weather, w.TempC))
-			} else if m == "/whereiam" {
-				s.Say(fmt.Sprintf("U r at %s", s.States["place"].GetState()))
-			} else if m == "/restart gideon" {
-				datastream.SendCommand(ds.Command{
-					"kill", nil, "gideon", "Averrin",
-				})
-			} else if strings.HasPrefix(m, "/cmd") {
-				tokens := strings.Split(m, " ")
-				if len(tokens) >= 3 {
-					datastream.SendCommand(ds.Command{
-						tokens[2], nil, tokens[1], "Averrin",
-					})
-				}
-			}
+			s.dispatchMessages(m)
 		case t := <-tchan:
 			s.Machines["daytime"].Trigger(personal.GetDaytime(), s.States["daytime"], s.DB)
 			if t.Minutes() < 1 && s.LastPlace == "work" && s.Flags["late at work"] != true {
@@ -276,6 +257,7 @@ func (s *Shodan) initAPI() {
 	http.HandleFunc("/place/", func(w http.ResponseWriter, r *http.Request) {
 		place := r.URL.Path[len("/place/"):]
 		datastream.SetWhereIAm(place)
+		s.Say("U are at " + place)
 	})
 	http.HandleFunc("/cmd/", func(w http.ResponseWriter, r *http.Request) {
 		tokens := strings.Split(r.URL.Path[len("/cmd/"):], "/")
@@ -286,4 +268,69 @@ func (s *Shodan) initAPI() {
 	go func() {
 		log.Println(http.ListenAndServe(":"+viper.GetString("port"), nil))
 	}()
+}
+
+func (s *Shodan) LightOn(name string) {
+	datastream.SendCommand(ds.Command{
+		"light", map[string]interface{}{
+			"name": name,
+			"code": "On",
+		}, "gideon", "Shodan",
+	})
+}
+
+func (s *Shodan) UpdateGideon() {
+	datastream.SendCommand(ds.Command{
+		"update", nil, "gideon", "Shodan",
+	})
+}
+
+func (s *Shodan) dispatchMessages(m string) {
+	if m == "/update" {
+		s.Say("update Gideon")
+		s.UpdateGideon()
+		return
+	}
+
+	if strings.HasPrefix(m, "/lightOn") {
+		tokens := strings.Split(m, " ")
+		if len(tokens) >= 2 {
+			s.LightOn(tokens[1])
+		}
+		return
+	}
+
+	if m == "/debug" {
+		s.Flags["debug"] = true
+		s.Say("debug on")
+		return
+	}
+
+	if m == "/w" {
+		w := weather.GetWeather()
+		s.Say(fmt.Sprintf("%s - %v°", w.Weather, w.TempC))
+		return
+	}
+
+	if m == "/whereiam" {
+		s.Say(fmt.Sprintf("U r at %s", s.States["place"].GetState()))
+		return
+	}
+
+	if m == "/restart gideon" {
+		datastream.SendCommand(ds.Command{
+			"kill", nil, "gideon", "Averrin",
+		})
+		return
+	}
+
+	if strings.HasPrefix(m, "/cmd") {
+		tokens := strings.Split(m, " ")
+		if len(tokens) >= 3 {
+			datastream.SendCommand(ds.Command{
+				tokens[2], nil, tokens[1], "Averrin",
+			})
+		}
+		return
+	}
 }
