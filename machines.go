@@ -70,9 +70,7 @@ func NewPlaceMachine(state *PlaceState, shodan *Shodan) *transition.StateMachine
 	m.Event("home").To("home").From("nowhere")
 	m.Event("work").To("work").From("nowhere")
 	m.Event("village").To("village").From("nowhere")
-	m.Event("nowhere").To("nowhere").From("work")
-	m.Event("nowhere").To("nowhere").From("home")
-	m.Event("nowhere").To("nowhere").From("village")
+	m.Event("nowhere").To("nowhere").From("work", "home", "village")
 	return m
 }
 

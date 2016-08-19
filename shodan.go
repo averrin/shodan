@@ -255,10 +255,11 @@ func (s *Shodan) initAPI() {
 		}
 	})
 	http.HandleFunc("/place/", func(w http.ResponseWriter, r *http.Request) {
-		place := r.URL.Path[len("/place/"):]
+		place := strings.TrimSpace(r.URL.Path[len("/place/"):])
 		datastream.SetWhereIAm(place)
 		err := s.Machines["place"].Trigger(place, s.States["place"], s.DB)
 		if err != nil {
+			log.Println(place)
 			log.Println(err)
 		}
 	})
