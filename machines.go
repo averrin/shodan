@@ -67,10 +67,11 @@ func NewPlaceMachine(state *PlaceState, shodan *Shodan) *transition.StateMachine
 		shodan.Flags["late at work"] = false
 		return nil
 	})
-	m.Event("home").To("home").From("nowhere")
-	m.Event("work").To("work").From("nowhere")
-	m.Event("village").To("village").From("nowhere")
-	m.Event("nowhere").To("nowhere").From("work", "home", "village")
+	m.Event("home").To("home").From("nowhere", "work", "village", "pavel")
+	m.Event("work").To("work").From("nowhere", "home", "village", "pavel")
+	m.Event("pavel").To("pavel").From("nowhere", "home", "village", "work")
+	m.Event("village").To("village").From("nowhere", "home", "pavel", "work")
+	m.Event("nowhere").To("nowhere").From("work", "home", "village", "pavel")
 	return m
 }
 
@@ -92,10 +93,23 @@ func NewDayTimeMachine(state *DayTimeState, shodan *Shodan) *transition.StateMac
 	return m
 }
 
+func NewActivityMachine(state *ActivityState, shodan *Shodan) *transition.StateMachine {
+	wm := transition.New(state)
+	wm.Initial("idle")
+	wm.State("active")
+	wm.Event("idle").To("active").From("idle")
+	wm.Event("active").To("idle").From("active")
+	return wm
+}
+
 type PlaceState struct {
 	transition.Transition
 }
 
 type DayTimeState struct {
+	transition.Transition
+}
+
+type ActivityState struct {
 	transition.Transition
 }

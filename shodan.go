@@ -133,6 +133,10 @@ func NewShodan() *Shodan {
 	dts := DayTimeState{}
 	s.States["daytime"] = &dts
 	s.Machines["daytime"] = NewDayTimeMachine(&dts, &s)
+
+	as := ActivityState{}
+	s.States["activity"] = &as
+	s.Machines["activity"] = NewActivityMachine(&as, &s)
 	return &s
 }
 
@@ -197,6 +201,7 @@ func (s *Shodan) Serve() {
 					time.Sleep(10 * time.Minute)
 					if s.LastPlace == "work" {
 						s.Say("go home")
+						s.Say(fmt.Sprintf("Debug: %v", t))
 					}
 				}()
 			}
@@ -268,6 +273,10 @@ func (s *Shodan) initAPI() {
 		datastream.SendCommand(ds.Command{
 			tokens[1], nil, tokens[0], "Shodan",
 		})
+	})
+	http.HandleFunc("/display/", func(w http.ResponseWriter, r *http.Request) {
+		display := strings.TrimSpace(r.URL.Path[len("/display/"):])
+		datastream.SetValue("display", display)
 	})
 	go func() {
 		log.Println(http.ListenAndServe(":"+viper.GetString("port"), nil))
