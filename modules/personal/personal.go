@@ -1,6 +1,7 @@
 package personal
 
 import (
+	"log"
 	"time"
 
 	ds "github.com/averrin/shodan/modules/datastream"
@@ -82,6 +83,7 @@ func (Personal) GetActivity(datastream *ds.DataStream) bool {
 	datastream.Get("display", &phone)
 	pc := ds.Value{}
 	datastream.Get("pc", &pc)
+	log.Print(phone.Value.(string), pc.Value.(string), phone.Value.(string) == "on" || pc.Value.(string) == "unidle")
 	if phone.Value.(string) == "on" || pc.Value.(string) == "unidle" {
 		return true
 	}

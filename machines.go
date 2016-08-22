@@ -120,8 +120,8 @@ func NewActivityMachine(state *ActivityState, shodan *Shodan) *transition.StateM
 		}
 		return nil
 	})
-	wm.Event("idle").To("active").From("idle")
-	wm.Event("active").To("idle").From("active")
+	wm.Event("idle").To("idle").From("active")
+	wm.Event("active").To("active").From("idle")
 	return wm
 }
 

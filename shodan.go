@@ -234,18 +234,18 @@ func (s *Shodan) initAPI() {
 		display := strings.TrimSpace(r.URL.Path[len("/display/"):])
 		datastream.SetValue("display", display)
 		if personal.GetActivity(datastream) {
-			s.Machines["activity"].Trigger("active", s.States["activity"], s.DB)
+			log.Println(s.Machines["activity"].Trigger("active", s.States["activity"], s.DB))
 		} else {
-			s.Machines["activity"].Trigger("idle", s.States["activity"], s.DB)
+			log.Println(s.Machines["activity"].Trigger("idle", s.States["activity"], s.DB))
 		}
 	})
 	http.HandleFunc("/pc/", func(w http.ResponseWriter, r *http.Request) {
 		pc := strings.TrimSpace(r.URL.Path[len("/pc/"):])
 		datastream.SetValue("pc", pc)
 		if personal.GetActivity(datastream) {
-			s.Machines["activity"].Trigger("active", s.States["activity"], s.DB)
+			log.Println(s.Machines["activity"].Trigger("active", s.States["activity"], s.DB))
 		} else {
-			s.Machines["activity"].Trigger("idle", s.States["activity"], s.DB)
+			log.Println(s.Machines["activity"].Trigger("idle", s.States["activity"], s.DB))
 		}
 	})
 	go func() {
