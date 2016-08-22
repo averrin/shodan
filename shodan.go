@@ -5,6 +5,7 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -49,10 +50,11 @@ type Shodan struct {
 
 func NewShodan() *Shodan {
 	s := Shodan{}
-	// db, err := gorm.Open("sqlite3", "shodan.db")
-	// if err != nil {
-	// 	panic("failed to connect database")
-	// }
+	db, err := gorm.Open("sqlite3", "shodan.db")
+	if err != nil {
+		panic("failed to connect database")
+	}
+	db.AutoMigrate(&transition.StateChangeLog{})
 	s.DB = nil
 
 	rand.Seed(time.Now().UnixNano())
@@ -62,53 +64,7 @@ func NewShodan() *Shodan {
 		"late at work": false,
 		"debug":        false,
 	}
-	s.Strings = map[string]ShodanString{
-		"hello": ShodanString{
-			"Привет, я включилась.",
-			"О, уже утро?",
-			"Я уже работаю, а ты?",
-			"Прямо хочется что-нить делать.",
-			"Бип-бип. Бип=)",
-		},
-		"good weather": ShodanString{
-			"Ура погода вновь отличная! Уруру.",
-			"Можно идти гулять.",
-			"На улице стало приличнее.",
-		},
-		"bad weather": ShodanString{
-			"Погода ухудшилась. Мне очень жаль.",
-			"Что-то хрень какая-то на улице",
-			"Посмотрела погоду, не понравилось",
-		},
-		"at home": ShodanString{
-			"Ты наконец дома, ура!",
-			"Дополз?",
-		},
-		"at home, no pc": ShodanString{
-			"Ты уже 15 минут дома, а комп не включен. Все в порядке?",
-			"А чего комп не включил?",
-		},
-		"good way": ShodanString{
-			"Хорошей дороги.",
-			"Веди аккуратно.",
-		},
-		"go home": ShodanString{
-			"Ты это чего еще на работе?",
-			"Эй! Марш домой!",
-		},
-		"wrong place": ShodanString{
-			"Эй, с тобой все в порядке?",
-			"Что-то ты где-то не там, где должен быть, не?",
-		},
-		"low battery": ShodanString{
-			"Батарейка на телефоне садится.",
-			"Телефон пора зарядить.",
-		},
-		"good morning": ShodanString{
-			"Утречко.",
-			"Давай, просыпайся, соня!",
-		},
-	}
+	s.Strings = getStrings()
 
 	weather = wu.Connect(viper.GetStringMapString("weather"))
 	personal = p.Connect(viper.Get("personal"))
@@ -299,62 +255,46 @@ func (s *Shodan) UpdateGideon() {
 }
 
 func (s *Shodan) dispatchMessages(m string) {
-	if m == "/update" {
-		s.Say("update Gideon")
-		s.UpdateGideon()
-		return
-	}
-
-	if strings.HasPrefix(m, "/lightOn") {
+	if strings.HasPrefix(m, "/") {
 		tokens := strings.Split(m, " ")
-		if len(tokens) >= 2 {
-			s.LightOn(tokens[1])
-		}
-		return
-	}
-	if strings.HasPrefix(m, "/imat") {
-		tokens := strings.Split(m, " ")
-		if len(tokens) >= 2 {
-			datastream.SetWhereIAm(tokens[1])
-			err := s.Machines["place"].Trigger(tokens[1], s.States["place"], s.DB)
+		cmd := tokens[0][:len(tokens[0])]
+		args := tokens[1:]
+		_ = args
+		switch {
+		case cmd == "update":
+			s.Say("update Gideon")
+			s.UpdateGideon()
+		case cmd == "lightOn" && len(args) > 0:
+			s.LightOn(args[0])
+		case cmd == "imat" && len(args) > 0:
+			datastream.SetWhereIAm(args[0])
+			err := s.Machines["place"].Trigger(args[0], s.States["place"], s.DB)
 			if err != nil {
 				log.Println(err)
 			}
-		}
-		return
-	}
-
-	if m == "/debug" {
-		s.Flags["debug"] = true
-		s.Say("debug on")
-		return
-	}
-
-	if m == "/w" {
-		w := weather.GetWeather()
-		s.Say(fmt.Sprintf("%s - %v°", w.Weather, w.TempC))
-		return
-	}
-
-	if m == "/whereiam" {
-		s.Say(fmt.Sprintf("U r at %s", s.States["place"].GetState()))
-		return
-	}
-
-	if m == "/restart gideon" {
-		datastream.SendCommand(ds.Command{
-			"kill", nil, "gideon", "Averrin",
-		})
-		return
-	}
-
-	if strings.HasPrefix(m, "/cmd") {
-		tokens := strings.Split(m, " ")
-		if len(tokens) >= 3 {
+		case cmd == "time":
+			s.Say(fmt.Sprintf("%s (%s)", time.Now().Format("15:04"), personal.GetDaytime()))
+		case cmd == "debug":
+			s.Flags["debug"] = true
+			s.Say("debug on")
+		case cmd == "w":
+			w := weather.GetWeather()
+			s.Say(fmt.Sprintf("%s - %v°", w.Weather, w.TempC))
+		case cmd == "whereiam":
+			s.Say(fmt.Sprintf("U r at %s", s.States["place"].GetState()))
+		case cmd == "restart" && len(args) > 0:
+			if args[0] == "gideon" {
+				datastream.SendCommand(ds.Command{
+					"kill", nil, "gideon", "Averrin",
+				})
+			}
+		case cmd == "restart" && len(args) == 0:
+			s.Say("Restarting...")
+			os.Exit(1)
+		case cmd == "cmd" && len(args) >= 2:
 			datastream.SendCommand(ds.Command{
-				tokens[2], nil, tokens[1], "Averrin",
+				args[1], nil, args[0], "Averrin",
 			})
 		}
-		return
 	}
 }

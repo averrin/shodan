@@ -96,7 +96,18 @@ func NewDayTimeMachine(state *DayTimeState, shodan *Shodan) *transition.StateMac
 func NewActivityMachine(state *ActivityState, shodan *Shodan) *transition.StateMachine {
 	wm := transition.New(state)
 	wm.Initial("idle")
-	wm.State("active")
+	wm.State("active").Enter(func(state interface{}, tx *gorm.DB) error {
+		s := state.(*ActivityState)
+		if personal.GetDaytime() == "night" {
+			go func() {
+				time.Sleep(5 * time.Minute)
+				if s.GetState() == "active" {
+					shodan.Say("activity at night")
+				}
+			}()
+		}
+		return nil
+	})
 	wm.Event("idle").To("active").From("idle")
 	wm.Event("active").To("idle").From("active")
 	return wm
