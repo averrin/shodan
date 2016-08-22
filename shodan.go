@@ -233,10 +233,20 @@ func (s *Shodan) initAPI() {
 	http.HandleFunc("/display/", func(w http.ResponseWriter, r *http.Request) {
 		display := strings.TrimSpace(r.URL.Path[len("/display/"):])
 		datastream.SetValue("display", display)
+		if personal.GetActivity(datastream) {
+			s.Machines["activity"].Trigger("active", s.States["place"], s.DB)
+		} else {
+			s.Machines["activity"].Trigger("idle", s.States["place"], s.DB)
+		}
 	})
 	http.HandleFunc("/pc/", func(w http.ResponseWriter, r *http.Request) {
 		pc := strings.TrimSpace(r.URL.Path[len("/pc/"):])
 		datastream.SetValue("pc", pc)
+		if personal.GetActivity(datastream) {
+			s.Machines["activity"].Trigger("active", s.States["place"], s.DB)
+		} else {
+			s.Machines["activity"].Trigger("idle", s.States["place"], s.DB)
+		}
 	})
 	go func() {
 		log.Println(http.ListenAndServe(":"+viper.GetString("port"), nil))

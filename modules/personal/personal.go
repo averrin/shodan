@@ -77,6 +77,17 @@ func (Personal) GetSeason() (season Season) {
 	return season
 }
 
+func (Personal) GetActivity(datastream *ds.DataStream) bool {
+	phone := ds.Value{}
+	datastream.Get("display", phone)
+	pc := ds.Value{}
+	datastream.Get("pc", pc)
+	if phone.Value.(string) == "on" || pc.Value.(string) == "unidle" {
+		return true
+	}
+	return false
+}
+
 func (p Personal) GetPlaceIsOk(point ds.Point) bool {
 	place := point.Name
 	day := p.GetDay()

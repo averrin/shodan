@@ -82,7 +82,19 @@ func NewDayTimeMachine(state *DayTimeState, shodan *Shodan) *transition.StateMac
 	m.State("day")
 	m.Event("day").To("day").From("morning")
 
-	m.State("night")
+	m.State("night").Enter(func(state interface{}, tx *gorm.DB) error {
+		a := shodan.States["activity"]
+		s := state.(*DayTimeState)
+		if s.GetState() == "night" {
+			go func() {
+				time.Sleep(5 * time.Minute)
+				if a.GetState() == "active" {
+					shodan.Say("activity at night")
+				}
+			}()
+		}
+		return nil
+	})
 	m.Event("night").To("night").From("evening")
 
 	m.State("evening")
