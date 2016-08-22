@@ -257,7 +257,7 @@ func (s *Shodan) UpdateGideon() {
 func (s *Shodan) dispatchMessages(m string) {
 	if strings.HasPrefix(m, "/") {
 		tokens := strings.Split(m, " ")
-		cmd := tokens[0][:len(tokens[0])]
+		cmd := tokens[0][1:len(tokens[0])]
 		args := tokens[1:]
 		_ = args
 		switch {
