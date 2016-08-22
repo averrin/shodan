@@ -80,10 +80,10 @@ func (Personal) GetSeason() (season Season) {
 
 func (Personal) GetActivity(datastream *ds.DataStream) bool {
 	phone := ds.Value{}
-	datastream.Get("display", phone)
+	datastream.Get("display", &phone)
 	log.Println(phone)
 	pc := ds.Value{}
-	datastream.Get("pc", pc)
+	datastream.Get("pc", &pc)
 	log.Println(pc)
 	if phone.Value.(string) == "on" || pc.Value.(string) == "unidle" {
 		return true
