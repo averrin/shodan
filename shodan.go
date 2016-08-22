@@ -311,6 +311,13 @@ func (s *Shodan) dispatchMessages(m string) {
 			datastream.SendCommand(ds.Command{
 				args[1], nil, args[0], "Averrin",
 			})
+		case cmd == "status":
+			for k, v := range s.States {
+				s.Say(fmt.Sprintf("%s: %s", k, v.GetState()))
+			}
+			for k, v := range s.Flags {
+				s.Say(fmt.Sprintf("%s: %v", k, v))
+			}
 		}
 	}
 }
