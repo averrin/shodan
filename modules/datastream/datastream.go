@@ -100,6 +100,7 @@ type RoomTemp struct {
 
 func (ds *DataStream) Get(key string, value interface{}) {
 	raw, err := client.Get(key).Bytes()
+	log.Println(string(raw))
 	if err != nil {
 		log.Print(err)
 	}
