@@ -234,6 +234,10 @@ func (s *Shodan) initAPI() {
 		display := strings.TrimSpace(r.URL.Path[len("/display/"):])
 		datastream.SetValue("display", display)
 	})
+	http.HandleFunc("/pc/", func(w http.ResponseWriter, r *http.Request) {
+		pc := strings.TrimSpace(r.URL.Path[len("/pc/"):])
+		datastream.SetValue("pc", pc)
+	})
 	go func() {
 		log.Println(http.ListenAndServe(":"+viper.GetString("port"), nil))
 	}()
@@ -261,6 +265,8 @@ func (s *Shodan) dispatchMessages(m string) {
 		args := tokens[1:]
 		_ = args
 		switch {
+		case cmd == "echo":
+			s.Say(strings.Join(args, " "))
 		case cmd == "update":
 			s.Say("update Gideon")
 			s.UpdateGideon()
