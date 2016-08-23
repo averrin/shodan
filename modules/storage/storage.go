@@ -13,6 +13,7 @@ import (
 type Storage map[string]string
 
 var notes *couchdb.Database
+var events *couchdb.Database
 
 func Connect(creds map[string]string) *Storage {
 	stor := Storage{}
@@ -33,6 +34,7 @@ func (stor *Storage) NewDB() {
 	}
 	auth := couchdb.BasicAuth{Username: creds["user"], Password: creds["password"]}
 	notes = conn.SelectDB("notes", &auth)
+	events = conn.SelectDB("events", &auth)
 	if notes != nil {
 		log.Println("Storage connected")
 	}
@@ -67,10 +69,30 @@ func (stor *Storage) SaveNote(text string) {
 	}
 }
 
+func (stor *Storage) ReportEvent(event string, note string) {
+	e := Event{
+		Event:     event,
+		Note:      note,
+		Timestamp: time.Now(),
+	}
+	_, err := events.Save(e, fmt.Sprintf("%s", uuid.NewV4()), "")
+	if err != nil {
+		log.Println(err)
+	}
+}
+
 type Note struct {
 	ID        string    `json:"_id"`
 	Rev       string    `json:"_rev"`
 	Text      string    `json:"Text"`
+	Timestamp time.Time `json:"Timestamp"`
+}
+
+type Event struct {
+	ID        string    `json:"_id"`
+	Rev       string    `json:"_rev"`
+	Event     string    `json:"Text"`
+	Note      string    `json:"Text"`
 	Timestamp time.Time `json:"Timestamp"`
 }
 

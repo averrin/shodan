@@ -67,12 +67,24 @@ func NewPlaceMachine(state *PlaceState, shodan *Shodan) *transition.StateMachine
 		shodan.Flags["late at work"] = false
 		return nil
 	})
-	m.Event("home").To("home").From("nowhere", "work", "village", "pavel")
-	m.Event("work").To("work").From("nowhere", "home", "village", "pavel")
-	m.Event("pavel").To("pavel").From("nowhere", "home", "village", "work")
-	m.Event("village").To("village").From("nowhere", "home", "pavel", "work")
-	m.Event("nowhere").To("nowhere").From("work", "home", "village", "pavel")
+	m.Event("home").To("home").From("nowhere", "work", "village", "pavel").Before(beforePlace).After(afterPlace)
+	m.Event("work").To("work").From("nowhere", "home", "village", "pavel").Before(beforePlace).After(afterPlace)
+	m.Event("pavel").To("pavel").From("nowhere", "home", "village", "work").Before(beforePlace).After(afterPlace)
+	m.Event("village").To("village").From("nowhere", "home", "pavel", "work").Before(beforePlace).After(afterPlace)
+	m.Event("nowhere").To("nowhere").From("work", "home", "village", "pavel").Before(beforePlace).After(afterPlace)
 	return m
+}
+
+func beforePlace(state interface{}, tx *gorm.DB) error {
+	s := state.(*PlaceState)
+	storage.ReportEvent("leave", s.GetState())
+	return nil
+}
+
+func afterPlace(state interface{}, tx *gorm.DB) error {
+	s := state.(*PlaceState)
+	storage.ReportEvent("enter", s.GetState())
+	return nil
 }
 
 func NewDayTimeMachine(state *DayTimeState, shodan *Shodan) *transition.StateMachine {
@@ -106,6 +118,7 @@ func NewDayTimeMachine(state *DayTimeState, shodan *Shodan) *transition.StateMac
 }
 
 func NewActivityMachine(state *ActivityState, shodan *Shodan) *transition.StateMachine {
+	shodan.Flags["late night notify"] = false
 	wm := transition.New(state)
 	wm.Initial("idle")
 	wm.State("active").Enter(func(state interface{}, tx *gorm.DB) error {
@@ -113,8 +126,14 @@ func NewActivityMachine(state *ActivityState, shodan *Shodan) *transition.StateM
 		if personal.GetDaytime() == "night" {
 			go func() {
 				time.Sleep(5 * time.Minute)
-				if s.GetState() == "active" {
+				if s.GetState() == "active" && !shodan.Flags["late night notify"] {
 					shodan.Say("activity at night")
+					storage.ReportEvent("nightActivity", "")
+					shodan.Flags["late night notify"] = true
+					go func() {
+						time.Sleep(1 * time.Hour)
+						shodan.Flags["late night notify"] = false
+					}()
 				}
 			}()
 		}

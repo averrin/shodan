@@ -152,6 +152,7 @@ func (s *Shodan) Serve() {
 	s.initAPI()
 	datastream.Heartbeat("shodan")
 	s.Say("hello")
+	storage.ReportEvent("startShodan", "")
 	for {
 		select {
 		case m := <-ichan:
@@ -168,9 +169,11 @@ func (s *Shodan) Serve() {
 						if dt != "evening" {
 							s.Say("У тебя какая-то хрень с аттендансом.")
 							s.Say(fmt.Sprintf("Debug: %v", t))
+							storage.ReportEvent("attendanceGlitch", "")
 						} else {
 							s.Say("go home")
 							s.Say(fmt.Sprintf("Debug: %v", t))
+							storage.ReportEvent("lateAtWork", "")
 						}
 					}
 				}()
@@ -203,6 +206,7 @@ func (s *Shodan) Serve() {
 					time.Sleep(10 * time.Minute)
 					if s.LastPlace == p.Name {
 						s.Say("wrong place")
+						storage.ReportEvent("wrongPlace", p.Name)
 					}
 				}()
 			}
@@ -217,16 +221,20 @@ func (s *Shodan) initAPI() {
 		datastream.SetValue("battery", level)
 		if level == "low" {
 			s.Say("low battery")
+			storage.ReportEvent("lowBattery", "")
 		}
 	})
 	http.HandleFunc("/dream/", func(w http.ResponseWriter, r *http.Request) {
 		status := r.URL.Path[len("/dream/"):]
 		datastream.SetValue("dream", status)
 		if status == "awake" {
+			storage.ReportEvent("awake", "")
 			go func() {
 				time.Sleep(3 * time.Minute)
 				s.Say("good morning")
 			}()
+		} else {
+			storage.ReportEvent("sleep", "")
 		}
 	})
 	http.HandleFunc("/place/", func(w http.ResponseWriter, r *http.Request) {
@@ -243,10 +251,12 @@ func (s *Shodan) initAPI() {
 		datastream.SendCommand(ds.Command{
 			tokens[1], nil, tokens[0], "Shodan",
 		})
+		storage.ReportEvent("command", r.URL.Path[len("/cmd/"):])
 	})
 	http.HandleFunc("/display/", func(w http.ResponseWriter, r *http.Request) {
 		display := strings.TrimSpace(r.URL.Path[len("/display/"):])
 		datastream.SetValue("display", display)
+		storage.ReportEvent("displayActivity", display)
 		if personal.GetActivity(datastream) {
 			log.Println(s.Machines["activity"].Trigger("active", s.States["activity"], s.DB))
 		} else {
@@ -256,9 +266,11 @@ func (s *Shodan) initAPI() {
 	http.HandleFunc("/pc/", func(w http.ResponseWriter, r *http.Request) {
 		pc := strings.TrimSpace(r.URL.Path[len("/pc/"):])
 		datastream.SetValue("pc", pc)
+		storage.ReportEvent("pcActivity", pc)
 		if personal.GetActivity(datastream) {
 			if s.States["place"].GetState() != "home" {
 				s.Say("У тебя дома кто-то завелся, или комп своей жизнью живет?")
+				storage.ReportEvent("pcActivityWithoutMe", pc)
 			}
 			log.Println(s.Machines["activity"].Trigger("active", s.States["activity"], s.DB))
 		} else {
@@ -287,6 +299,7 @@ func (s *Shodan) UpdateGideon() {
 }
 
 func (s *Shodan) dispatchMessages(m string) {
+	storage.ReportEvent("message", m)
 	if strings.HasPrefix(m, "/") {
 		tokens := strings.Split(m, " ")
 		cmd := tokens[0][1:len(tokens[0])]
