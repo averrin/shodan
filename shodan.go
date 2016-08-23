@@ -287,7 +287,11 @@ func (s *Shodan) dispatchMessages(m string) {
 		case cmd == "ds":
 			v := ds.Value{}
 			datastream.Get(args[0], &v)
-			s.Say(v.Value.(string))
+			if v.Value != nil {
+				s.Say(v.Value.(string))
+			} else {
+				s.Say("Ты, наверное, что-то другое хотел спросить.")
+			}
 		case cmd == "echo":
 			s.Say(strings.Join(args, " "))
 		case cmd == "update":
