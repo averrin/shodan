@@ -45,6 +45,17 @@ func (stor *Storage) NewDB() {
 	notes.SaveDesignDoc("notes", ddoc, "")
 }
 
+func (stor *Storage) ClearNotes() {
+	results := ViewResult{}
+	err := notes.GetView("notes", "list", &results, nil)
+	if err != nil {
+		log.Println(err)
+	}
+	for _, n := range results.Rows {
+		log.Println(notes.Delete(n.Key[0], n.Key[0]))
+	}
+}
+
 func (stor *Storage) GetNotes() []Note {
 	results := ViewResult{}
 	err := notes.GetView("notes", "list", &results, nil)
@@ -97,7 +108,7 @@ func getNotesViews() map[string]View {
 	return map[string]View{
 		"list": {
 			Map: `function(doc){
-				emit(doc.Timestamp, doc);
+				emit([doc._id, doc._rev], doc);
 			}`,
 		},
 	}
@@ -117,8 +128,8 @@ type ViewResult struct {
 	TotalRows int `json:"total_rows"`
 	Offset    int `json:"offset"`
 	Rows      []struct {
-		ID    string    `json:"id"`
-		Key   time.Time `json:"key"`
-		Value Note      `json:"value"`
+		ID    string   `json:"id"`
+		Key   []string `json:"key"`
+		Value Note     `json:"value"`
 	} `json:"rows"`
 }

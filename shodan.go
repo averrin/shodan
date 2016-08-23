@@ -257,24 +257,32 @@ func (s *Shodan) initAPI() {
 		display := strings.TrimSpace(r.URL.Path[len("/display/"):])
 		datastream.SetValue("display", display)
 		storage.ReportEvent("displayActivity", display)
+		var err error
 		if personal.GetActivity(datastream) {
-			log.Println(s.Machines["activity"].Trigger("active", s.States["activity"], s.DB))
+			err = s.Machines["activity"].Trigger("active", s.States["activity"], s.DB)
 		} else {
-			log.Println(s.Machines["activity"].Trigger("idle", s.States["activity"], s.DB))
+			err = s.Machines["activity"].Trigger("idle", s.States["activity"], s.DB)
+		}
+		if err != nil {
+			log.Println(err)
 		}
 	})
 	http.HandleFunc("/pc/", func(w http.ResponseWriter, r *http.Request) {
 		pc := strings.TrimSpace(r.URL.Path[len("/pc/"):])
 		datastream.SetValue("pc", pc)
 		storage.ReportEvent("pcActivity", pc)
+		var err error
 		if personal.GetActivity(datastream) {
 			if s.States["place"].GetState() != "home" {
 				s.Say("У тебя дома кто-то завелся, или комп своей жизнью живет?")
 				storage.ReportEvent("pcActivityWithoutMe", pc)
 			}
-			log.Println(s.Machines["activity"].Trigger("active", s.States["activity"], s.DB))
+			err = s.Machines["activity"].Trigger("active", s.States["activity"], s.DB)
 		} else {
-			log.Println(s.Machines["activity"].Trigger("idle", s.States["activity"], s.DB))
+			err = s.Machines["activity"].Trigger("idle", s.States["activity"], s.DB)
+		}
+		if err != nil {
+			log.Println(err)
 		}
 	})
 	go func() {
@@ -362,6 +370,9 @@ func (s *Shodan) dispatchMessages(m string) {
 			for _, n := range notes {
 				s.Say(n.Text)
 			}
+		case cmd == "clear":
+			storage.ClearNotes()
+			s.Say("Забыла.")
 		}
 	} else {
 		storage.SaveNote(m)
