@@ -15,6 +15,7 @@ import (
 	ds "github.com/averrin/shodan/modules/datastream"
 	// eg "github.com/averrin/shodan/modules/eventghost"
 	// sh "github.com/averrin/shodan/modules/smarthome"
+	stor "github.com/averrin/shodan/modules/storage"
 	tg "github.com/averrin/shodan/modules/telegram"
 	wu "github.com/averrin/shodan/modules/weather"
 	"github.com/jinzhu/gorm"
@@ -27,8 +28,10 @@ var telegram tg.Telegram
 
 var weather wu.WUnderground
 var datastream *ds.DataStream
+var storage *stor.Storage
 var personal p.Personal
 var attendance *at.Info
+var nobot *bool
 
 // var eventghost *eg.EventGhost
 // var smarthome sh.SmartHome
@@ -70,8 +73,11 @@ func NewShodan() *Shodan {
 	personal = p.Connect(viper.Get("personal"))
 	// pushbullet = pb.Connect(viper.GetStringMapString("pushbullet"))
 	datastream = ds.Connect(viper.GetStringMapString("datastream"))
+	storage = stor.Connect(viper.GetStringMapString("storage"))
 	attendance = at.Connect(viper.GetStringMapString("attendance")).GetAttendance()
-	telegram = tg.Connect(viper.GetStringMapString("telegram"))
+	if !*nobot {
+		telegram = tg.Connect(viper.GetStringMapString("telegram"))
+	}
 	// smarthome = sh.Connect(viper.GetStringMapString("smarthome"))
 	// eventghost = eg.Connect(viper.GetStringMapString("eventghost"))
 
@@ -139,7 +145,9 @@ func (s *Shodan) Serve() {
 	}(pchan)
 
 	ichan := make(chan string)
-	telegram.SetInbox(ichan)
+	if !*nobot {
+		telegram.SetInbox(ichan)
+	}
 
 	s.initAPI()
 	datastream.Heartbeat("shodan")
@@ -258,6 +266,7 @@ func (s *Shodan) initAPI() {
 		}
 	})
 	go func() {
+		log.Println("Start API")
 		log.Println(http.ListenAndServe(":"+viper.GetString("port"), nil))
 	}()
 }
@@ -336,5 +345,8 @@ func (s *Shodan) dispatchMessages(m string) {
 				s.Say(fmt.Sprintf("%s: %v", k, v))
 			}
 		}
+	} else {
+		storage.SaveNote(m)
+		s.Say("saved")
 	}
 }

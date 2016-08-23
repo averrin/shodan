@@ -10,6 +10,7 @@ import (
 
 func main() {
 	log.Println("======")
+	nobot = flag.Bool("nobot", false, "no telegram bot")
 	flag.Parse()
 	viper.SetConfigType("yaml")
 	viper.SetConfigName("config")
