@@ -150,14 +150,20 @@ func (s *Shodan) Serve() {
 			log.Println(m)
 			s.dispatchMessages(m)
 		case t := <-tchan:
-			s.Machines["daytime"].Trigger(personal.GetDaytime(), s.States["daytime"], s.DB)
+			dt := personal.GetDaytime()
+			s.Machines["daytime"].Trigger(dt, s.States["daytime"], s.DB)
 			if t.Minutes() < 1 && s.LastPlace == "work" && s.Flags["late at work"] != true {
 				go func() {
 					s.Flags["late at work"] = true
 					time.Sleep(10 * time.Minute)
 					if s.LastPlace == "work" {
-						s.Say("go home")
-						s.Say(fmt.Sprintf("Debug: %v", t))
+						if dt != "evening" {
+							s.Say("У тебя какая-то хрень с аттендансом.")
+							s.Say(fmt.Sprintf("Debug: %v", t))
+						} else {
+							s.Say("go home")
+							s.Say(fmt.Sprintf("Debug: %v", t))
+						}
 					}
 				}()
 			}
@@ -243,6 +249,9 @@ func (s *Shodan) initAPI() {
 		pc := strings.TrimSpace(r.URL.Path[len("/pc/"):])
 		datastream.SetValue("pc", pc)
 		if personal.GetActivity(datastream) {
+			if s.States["place"].GetState() != "home" {
+				s.Say("У тебя дома кто-то завелся, или комп своей жизнью живет?")
+			}
 			log.Println(s.Machines["activity"].Trigger("active", s.States["activity"], s.DB))
 		} else {
 			log.Println(s.Machines["activity"].Trigger("idle", s.States["activity"], s.DB))
@@ -275,6 +284,10 @@ func (s *Shodan) dispatchMessages(m string) {
 		args := tokens[1:]
 		_ = args
 		switch {
+		case cmd == "ds":
+			v := ds.Value{}
+			datastream.Get(args[0], &v)
+			s.Say(v.Value.(string))
 		case cmd == "echo":
 			s.Say(strings.Join(args, " "))
 		case cmd == "update":
