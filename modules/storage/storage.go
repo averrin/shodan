@@ -52,7 +52,7 @@ func (stor *Storage) ClearNotes() {
 		log.Println(err)
 	}
 	for _, n := range results.Rows {
-		log.Println(notes.Delete(n.Key[0], n.Key[0]))
+		log.Println(notes.Delete(n.Key[0], n.Key[1]))
 	}
 }
 
