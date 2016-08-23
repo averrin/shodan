@@ -26,7 +26,7 @@ func Connect(creds map[string]string) *Storage {
 func (stor *Storage) NewDB() {
 	creds := *stor
 	port, _ := strconv.Atoi(creds["port"])
-	timeout := time.Duration(500 * time.Millisecond)
+	timeout := time.Duration(3 * time.Second)
 	conn, err := couchdb.NewConnection(creds["host"], port, timeout)
 	if err != nil {
 		log.Println(err)
@@ -36,6 +36,24 @@ func (stor *Storage) NewDB() {
 	if notes != nil {
 		log.Println("Storage connected")
 	}
+	ddoc := DesignDocument{
+		Language: "javascript",
+		Views:    getNotesViews(),
+	}
+	notes.SaveDesignDoc("notes", ddoc, "")
+}
+
+func (stor *Storage) GetNotes() []Note {
+	results := ViewResult{}
+	err := notes.GetView("notes", "list", &results, nil)
+	if err != nil {
+		log.Println(err)
+	}
+	r := []Note{}
+	for _, n := range results.Rows {
+		r = append(r, n.Value)
+	}
+	return r
 }
 
 func (stor *Storage) SaveNote(text string) {
@@ -50,6 +68,38 @@ func (stor *Storage) SaveNote(text string) {
 }
 
 type Note struct {
-	Text      string
-	Timestamp time.Time
+	ID        string    `json:"_id"`
+	Rev       string    `json:"_rev"`
+	Text      string    `json:"Text"`
+	Timestamp time.Time `json:"Timestamp"`
+}
+
+func getNotesViews() map[string]View {
+	return map[string]View{
+		"list": {
+			Map: `function(doc){
+				emit(doc.Timestamp, doc);
+			}`,
+		},
+	}
+}
+
+type DesignDocument struct {
+	Language string          `json:"language"`
+	Views    map[string]View `json:"views"`
+}
+
+type View struct {
+	Map    string `json:"map"`
+	Reduce string `json:"reduce,omitempty"`
+}
+
+type ViewResult struct {
+	TotalRows int `json:"total_rows"`
+	Offset    int `json:"offset"`
+	Rows      []struct {
+		ID    string    `json:"id"`
+		Key   time.Time `json:"key"`
+		Value Note      `json:"value"`
+	} `json:"rows"`
 }

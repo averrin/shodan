@@ -344,6 +344,11 @@ func (s *Shodan) dispatchMessages(m string) {
 			for k, v := range s.Flags {
 				s.Say(fmt.Sprintf("%s: %v", k, v))
 			}
+		case cmd == "list":
+			notes := storage.GetNotes()
+			for _, n := range notes {
+				s.Say(n.Text)
+			}
 		}
 	} else {
 		storage.SaveNote(m)
