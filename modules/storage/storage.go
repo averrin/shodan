@@ -33,8 +33,8 @@ func (stor *Storage) NewDB() {
 		log.Println(err)
 	}
 	auth := couchdb.BasicAuth{Username: creds["user"], Password: creds["password"]}
-	notes = conn.SelectDB("notes", &auth)
 	events = conn.SelectDB("events", &auth)
+	notes = conn.SelectDB("notes", &auth)
 	if notes != nil {
 		log.Println("Storage connected")
 	}
@@ -75,6 +75,7 @@ func (stor *Storage) ReportEvent(event string, note string) {
 		Note:      note,
 		Timestamp: time.Now(),
 	}
+	log.Println(e)
 	_, err := events.Save(e, fmt.Sprintf("%s", uuid.NewV4()), "")
 	if err != nil {
 		log.Println(err)
@@ -82,15 +83,11 @@ func (stor *Storage) ReportEvent(event string, note string) {
 }
 
 type Note struct {
-	ID        string    `json:"_id"`
-	Rev       string    `json:"_rev"`
 	Text      string    `json:"Text"`
 	Timestamp time.Time `json:"Timestamp"`
 }
 
 type Event struct {
-	ID        string    `json:"_id"`
-	Rev       string    `json:"_rev"`
 	Event     string    `json:"Text"`
 	Note      string    `json:"Text"`
 	Timestamp time.Time `json:"Timestamp"`
