@@ -88,8 +88,8 @@ type Note struct {
 }
 
 type Event struct {
-	Event     string    `json:"Text"`
-	Note      string    `json:"Text"`
+	Event     string    `json:"Event"`
+	Note      string    `json:"Note"`
 	Timestamp time.Time `json:"Timestamp"`
 }
 
