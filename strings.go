@@ -66,5 +66,12 @@ func getStrings() map[string]ShodanString {
 			"Запомнила.",
 			"Записала.",
 		},
+		"awake": ShodanString{
+			"Вот и умничка!",
+			"Да ты герой! Я бы еще полежала.",
+		},
+		"get up now": ShodanString{
+			"Вставай давай, а то свет включу!",
+		},
 	}
 }

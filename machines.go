@@ -3,6 +3,7 @@ package main
 import (
 	"time"
 
+	ds "github.com/averrin/shodan/modules/datastream"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
 	"github.com/qor/transition"
@@ -144,6 +145,39 @@ func NewActivityMachine(state *ActivityState, shodan *Shodan) *transition.StateM
 	return wm
 }
 
+func NewSleepMachine(state *SleepState, shodan *Shodan) *transition.StateMachine {
+	wm := transition.New(state)
+	wm.Initial("awake")
+	wm.State("awake").Enter(func(state interface{}, tx *gorm.DB) error {
+		shodan.Say("awake")
+		return nil
+	})
+	wm.State("sleep")
+	wm.State("dream").Enter(func(state interface{}, tx *gorm.DB) error {
+		s := state.(*SleepState)
+		go func() {
+			time.Sleep(30 * time.Minute)
+			if s.GetState() == "dream" {
+				shodan.Say("get up now")
+				go func() {
+					time.Sleep(3 * time.Minute)
+					if s.GetState() == "dream" {
+						shodan.Say("А я предупреждала!")
+						datastream.SendCommand(ds.Command{
+							"sh:Спальня:On", nil, "gideon", "Shodan",
+						})
+					}
+				}()
+			}
+		}()
+		return nil
+	})
+	wm.Event("sleep").To("sleep").From("awake")
+	wm.Event("dream").To("dream").From("sleep")
+	wm.Event("awake").To("awake").From("dream", "sleep")
+	return wm
+}
+
 type PlaceState struct {
 	transition.Transition
 }
@@ -153,5 +187,9 @@ type DayTimeState struct {
 }
 
 type ActivityState struct {
+	transition.Transition
+}
+
+type SleepState struct {
 	transition.Transition
 }

@@ -99,6 +99,10 @@ func NewShodan() *Shodan {
 	as := ActivityState{}
 	s.States["activity"] = &as
 	s.Machines["activity"] = NewActivityMachine(&as, &s)
+
+	ss := SleepState{}
+	s.States["sleep"] = &ss
+	s.Machines["sleep"] = NewSleepMachine(&ss, &s)
 	return &s
 }
 
@@ -227,14 +231,27 @@ func (s *Shodan) initAPI() {
 	http.HandleFunc("/dream/", func(w http.ResponseWriter, r *http.Request) {
 		status := r.URL.Path[len("/dream/"):]
 		datastream.SetValue("dream", status)
-		if status == "awake" {
-			storage.ReportEvent("awake", "")
+		if status == "dream" {
 			go func() {
 				time.Sleep(3 * time.Minute)
 				s.Say("good morning")
 			}()
-		} else {
-			storage.ReportEvent("sleep", "")
+		}
+		err := s.Machines["sleep"].Trigger(status, s.States["sleep"], s.DB)
+		if err != nil {
+			log.Println(status)
+			log.Println(err)
+		}
+		storage.ReportEvent(status, "")
+	})
+	http.HandleFunc("/power/", func(w http.ResponseWriter, r *http.Request) {
+		status := strings.TrimSpace(r.URL.Path[len("/power/"):])
+		storage.ReportEvent("power", status)
+		if s.States["sleep"].GetState() != "awake" {
+			err := s.Machines["sleep"].Trigger("awake", s.States["sleep"], s.DB)
+			if err != nil {
+				log.Println(err)
+			}
 		}
 	})
 	http.HandleFunc("/place/", func(w http.ResponseWriter, r *http.Request) {
