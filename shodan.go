@@ -120,6 +120,21 @@ func (s *Shodan) Say(name string) {
 }
 
 func (s *Shodan) Serve() {
+	ticker := time.NewTicker(1 * time.Hour)
+	notifications := s.getNotifications()
+	go func() {
+		for _ = range ticker.C {
+			log.Println("Start testing notifications")
+			for _, n := range notifications {
+				log.Println(fmt.Sprintf("Test %v", n))
+				if n.Test() {
+					log.Println(n.Text)
+					s.Say(n.Text)
+				}
+			}
+		}
+	}()
+
 	tchan := make(chan time.Duration)
 	go func(c chan time.Duration) {
 		for {
@@ -166,7 +181,7 @@ func (s *Shodan) Serve() {
 		case t := <-tchan:
 			dt := personal.GetDaytime()
 			s.Machines["daytime"].Trigger(dt, s.States["daytime"], s.DB)
-			if t.Minutes() < 1 && s.LastPlace == "work" && s.Flags["late at work"] != true {
+			if t.Minutes() < 1 && s.LastPlace == "work" && s.Flags["late at work"] != true && time.Now().Hour() >= 12 {
 				go func() {
 					s.Flags["late at work"] = true
 					time.Sleep(10 * time.Minute)

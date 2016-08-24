@@ -44,9 +44,9 @@ func (Personal) GetDaytime() (daytime string) {
 	daytime = "day"
 	if h < 12 && h >= 5 {
 		daytime = "morning"
-	} else if h >= 19 && h < 23 {
+	} else if h >= 19 && h <= 23 {
 		daytime = "evening"
-	} else if h >= 23 || h < 5 {
+	} else if h > 23 || h < 5 {
 		daytime = "night"
 	}
 	return daytime
