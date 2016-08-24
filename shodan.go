@@ -64,8 +64,9 @@ func NewShodan() *Shodan {
 	s.Machines = map[string]*transition.StateMachine{}
 	s.States = map[string]transition.Stater{}
 	s.Flags = map[string]bool{
-		"late at work": false,
-		"debug":        false,
+		"late at work":       false,
+		"debug":              false,
+		"pc activity notify": false,
 	}
 	s.Strings = getStrings()
 
@@ -290,9 +291,14 @@ func (s *Shodan) initAPI() {
 		storage.ReportEvent("pcActivity", pc)
 		var err error
 		if personal.GetActivity(datastream) {
-			if s.States["place"].GetState() != "home" {
+			if s.States["place"].GetState() != "home" && !s.Flags["pc activity notify"] {
 				s.Say("У тебя дома кто-то завелся, или комп своей жизнью живет?")
 				storage.ReportEvent("pcActivityWithoutMe", pc)
+				s.Flags["pc activity notify"] = true
+				go func() {
+					time.Sleep(2 * time.Hour)
+					s.Flags["pc activity notify"] = false
+				}()
 			}
 			err = s.Machines["activity"].Trigger("active", s.States["activity"], s.DB)
 		} else {
