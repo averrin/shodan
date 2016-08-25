@@ -46,6 +46,7 @@ type Shodan struct {
 	Strings   map[string]ShodanString
 	Machines  map[string]*transition.StateMachine
 	States    map[string]transition.Stater
+	LastTimes map[string]time.Time
 	Flags     map[string]bool
 	LastPlace string
 	DB        *gorm.DB
@@ -63,6 +64,7 @@ func NewShodan() *Shodan {
 	rand.Seed(time.Now().UnixNano())
 	s.Machines = map[string]*transition.StateMachine{}
 	s.States = map[string]transition.Stater{}
+	s.LastTimes = map[string]time.Time{}
 	s.Flags = map[string]bool{
 		"late at work":       false,
 		"debug":              false,
@@ -104,6 +106,8 @@ func NewShodan() *Shodan {
 	ss := SleepState{}
 	s.States["sleep"] = &ss
 	s.Machines["sleep"] = NewSleepMachine(&ss, &s)
+
+	s.LastTimes["start"] = time.Now()
 	return &s
 }
 
@@ -181,16 +185,17 @@ func (s *Shodan) Serve() {
 		case t := <-tchan:
 			dt := personal.GetDaytime()
 			s.Machines["daytime"].Trigger(dt, s.States["daytime"], s.DB)
-			if t.Minutes() < 1 && s.LastPlace == "work" && s.Flags["late at work"] != true && time.Now().Hour() >= 12 {
+			if t.Minutes() < 1 && s.LastPlace == "work" && s.Flags["late at work"] != true && time.Now().Hour() > 12 {
 				go func() {
-					s.Flags["late at work"] = true
 					time.Sleep(10 * time.Minute)
+					_, _, sinceDI, _, _ := attendance.GetHomeTime()
 					if s.LastPlace == "work" {
-						if dt != "evening" {
+						if dt != "evening" && sinceDI.Minutes() < 1 {
 							s.Say("У тебя какая-то хрень с аттендансом.")
 							s.Say(fmt.Sprintf("Debug: %v", t))
 							storage.ReportEvent("attendanceGlitch", "")
 						} else {
+							s.Flags["late at work"] = true
 							s.Say("go home")
 							s.Say(fmt.Sprintf("Debug: %v", t))
 							storage.ReportEvent("lateAtWork", "")
@@ -247,12 +252,6 @@ func (s *Shodan) initAPI() {
 	http.HandleFunc("/dream/", func(w http.ResponseWriter, r *http.Request) {
 		status := r.URL.Path[len("/dream/"):]
 		datastream.SetValue("dream", status)
-		if status == "dream" {
-			go func() {
-				time.Sleep(3 * time.Minute)
-				s.Say("good morning")
-			}()
-		}
 		err := s.Machines["sleep"].Trigger(status, s.States["sleep"], s.DB)
 		if err != nil {
 			log.Println(status)
@@ -402,6 +401,9 @@ func (s *Shodan) dispatchMessages(m string) {
 			}
 			for k, v := range s.Flags {
 				s.Say(fmt.Sprintf("%s: %v", k, v))
+			}
+			for k, v := range s.LastTimes {
+				s.Say(fmt.Sprintf("%s: %s", k, v))
 			}
 		case cmd == "list":
 			notes := storage.GetNotes()

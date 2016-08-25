@@ -49,18 +49,30 @@ func NewPlaceMachine(state *PlaceState, shodan *Shodan) *transition.StateMachine
 	m.State("village")
 	m.State("pavel")
 	m.State("home").Enter(func(state interface{}, tx *gorm.DB) error {
-		// s := state.(*PlaceState)
+		s := state.(*PlaceState)
 		shodan.Say("at home")
-		// if !teamviewer.GetPCStatus() {
-		// 	go func() {
-		// 		time.Sleep(15 * time.Minute)
-		// 		if !teamviewer.GetPCStatus() && s.GetState() == "home" {
-		// 			shodan.Say("at home, no pc")
-		// 		}
-		// 	}()
-		// }
+		if time.Now().Sub(shodan.LastTimes["home leave"]).Minutes() > 15 {
+			datastream.SendCommand(ds.Command{
+				"sh:Прихожая 1:On", nil, "gideon", "Shodan",
+			})
+			datastream.SendCommand(ds.Command{
+				"sh:Прихожая 2:On", nil, "gideon", "Shodan",
+			})
+		}
+		pcStatus := ds.Value{}
+		datastream.Get("pc", &pcStatus)
+		if pcStatus.Value == "off" {
+			go func() {
+				time.Sleep(15 * time.Minute)
+				datastream.Get("pc", &pcStatus)
+				if pcStatus.Value == "off" && s.GetState() == "home" {
+					shodan.Say("at home, no pc")
+				}
+			}()
+		}
 		return nil
 	}).Exit(func(state interface{}, tx *gorm.DB) error {
+		shodan.LastTimes["home leave"] = time.Now()
 		return nil
 	})
 	m.State("work").Exit(func(state interface{}, tx *gorm.DB) error {
@@ -154,6 +166,10 @@ func NewSleepMachine(state *SleepState, shodan *Shodan) *transition.StateMachine
 	})
 	wm.State("sleep")
 	wm.State("dream").Enter(func(state interface{}, tx *gorm.DB) error {
+		go func() {
+			time.Sleep(3 * time.Minute)
+			shodan.Say("good morning")
+		}()
 		s := state.(*SleepState)
 		go func() {
 			time.Sleep(30 * time.Minute)
