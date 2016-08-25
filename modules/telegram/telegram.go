@@ -53,8 +53,7 @@ func (tg Telegram) Serve() {
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
 
-	updates, err := bot.GetUpdatesChan(u)
-	// bot.Send(tgbotapi.NewMessage(cid, "Привет, я включилась."))
+	updates, _ := bot.GetUpdatesChan(u)
 
 	for {
 		select {

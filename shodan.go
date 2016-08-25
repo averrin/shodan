@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
 	"math/rand"
 	"net/http"
@@ -191,7 +192,7 @@ func (s *Shodan) Serve() {
 					_, _, sinceDI, _, _ := attendance.GetHomeTime()
 					if s.LastPlace == "work" {
 						if dt != "evening" && sinceDI.Minutes() < 1 {
-							s.Say("У тебя какая-то хрень с аттендансом.")
+							s.Say("attendance glitch")
 							s.Say(fmt.Sprintf("Debug: %v", t))
 							storage.ReportEvent("attendanceGlitch", "")
 						} else {
@@ -285,6 +286,11 @@ func (s *Shodan) initAPI() {
 		})
 		storage.ReportEvent("command", r.URL.Path[len("/cmd/"):])
 	})
+	http.HandleFunc("/psb/", func(w http.ResponseWriter, r *http.Request) {
+		message, _ := ioutil.ReadAll(r.Body)
+		s.Say(string(message))
+		defer r.Body.Close()
+	})
 	http.HandleFunc("/display/", func(w http.ResponseWriter, r *http.Request) {
 		display := strings.TrimSpace(r.URL.Path[len("/display/"):])
 		datastream.SetValue("display", display)
@@ -306,7 +312,7 @@ func (s *Shodan) initAPI() {
 		var err error
 		if personal.GetActivity(datastream) {
 			if s.States["place"].GetState() != "home" && !s.Flags["pc activity notify"] {
-				s.Say("У тебя дома кто-то завелся, или комп своей жизнью живет?")
+				s.Say("pc without master")
 				storage.ReportEvent("pcActivityWithoutMe", pc)
 				s.Flags["pc activity notify"] = true
 				go func() {
@@ -357,7 +363,7 @@ func (s *Shodan) dispatchMessages(m string) {
 			if v.Value != nil {
 				s.Say(v.Value.(string))
 			} else {
-				s.Say("Ты, наверное, что-то другое хотел спросить.")
+				s.Say("wrong request")
 			}
 		case cmd == "echo":
 			s.Say(strings.Join(args, " "))
@@ -412,7 +418,7 @@ func (s *Shodan) dispatchMessages(m string) {
 			}
 		case cmd == "clear":
 			storage.ClearNotes()
-			s.Say("Забыла.")
+			s.Say("cleared")
 		}
 	} else {
 		storage.SaveNote(m)

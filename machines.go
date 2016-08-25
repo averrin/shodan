@@ -178,7 +178,7 @@ func NewSleepMachine(state *SleepState, shodan *Shodan) *transition.StateMachine
 				go func() {
 					time.Sleep(3 * time.Minute)
 					if s.GetState() == "dream" {
-						shodan.Say("А я предупреждала!")
+						shodan.Say("you were alerted")
 						datastream.SendCommand(ds.Command{
 							"sh:Спальня:On", nil, "gideon", "Shodan",
 						})
