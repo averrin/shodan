@@ -6,9 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
-	"time"
 
-	ds "github.com/averrin/shodan/modules/datastream"
 	"github.com/spf13/viper"
 )
 
@@ -52,17 +50,10 @@ func (s *Shodan) initAPI() {
 	})
 	http.HandleFunc("/cmd/", func(w http.ResponseWriter, r *http.Request) {
 		tokens := strings.Split(r.URL.Path[len("/cmd/"):], "/")
-		s.Say("sending command")
-		s.Say(tokens[0])
-		result := datastream.SendCommand(ds.Command{
-			tokens[1], nil, tokens[0], "Shodan",
-		})
-		if result.Success {
-			s.Say("command success")
-		} else {
-			s.Say("command fail")
+		cmd := s.getCommand("cmd")
+		if cmd.Cmd != "" {
+			cmd.Action(tokens...)
 		}
-		storage.ReportEvent("command", r.URL.Path[len("/cmd/"):])
 	})
 	http.HandleFunc("/psb/", func(w http.ResponseWriter, r *http.Request) {
 		message, _ := ioutil.ReadAll(r.Body)
@@ -70,17 +61,10 @@ func (s *Shodan) initAPI() {
 		defer r.Body.Close()
 	})
 	http.HandleFunc("/display/", func(w http.ResponseWriter, r *http.Request) {
-		display := strings.TrimSpace(r.URL.Path[len("/display/"):])
-		datastream.SetValue("display", display)
-		storage.ReportEvent("displayActivity", display)
-		var err error
-		if personal.GetActivity(datastream) {
-			err = s.Machines["activity"].Trigger("active", s.States["activity"], s.DB)
-		} else {
-			err = s.Machines["activity"].Trigger("idle", s.States["activity"], s.DB)
-		}
-		if err != nil {
-			log.Println(err)
+		status := strings.TrimSpace(r.URL.Path[len("/display/"):])
+		cmd := s.getCommand("phoneActivity")
+		if cmd.Cmd != "" {
+			cmd.Action(status)
 		}
 	})
 	http.HandleFunc("/alarm/", func(w http.ResponseWriter, r *http.Request) {
@@ -92,26 +76,10 @@ func (s *Shodan) initAPI() {
 		s.Say(fmt.Sprintf("alarm %s", sensor))
 	})
 	http.HandleFunc("/pc/", func(w http.ResponseWriter, r *http.Request) {
-		pc := strings.TrimSpace(r.URL.Path[len("/pc/"):])
-		datastream.SetValue("pc", pc)
-		storage.ReportEvent("pcActivity", pc)
-		var err error
-		if personal.GetActivity(datastream) {
-			if s.States["place"].GetState() != "home" && !s.Flags["pc activity notify"] {
-				s.Say("pc without master")
-				storage.ReportEvent("pcActivityWithoutMe", pc)
-				s.Flags["pc activity notify"] = true
-				go func() {
-					time.Sleep(2 * time.Hour)
-					s.Flags["pc activity notify"] = false
-				}()
-			}
-			err = s.Machines["activity"].Trigger("active", s.States["activity"], s.DB)
-		} else {
-			err = s.Machines["activity"].Trigger("idle", s.States["activity"], s.DB)
-		}
-		if err != nil {
-			log.Println(err)
+		status := strings.TrimSpace(r.URL.Path[len("/pc/"):])
+		cmd := s.getCommand("pcActivity")
+		if cmd.Cmd != "" {
+			cmd.Action(status)
 		}
 	})
 	go func() {

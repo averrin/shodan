@@ -13,14 +13,23 @@ import (
 type Command struct {
 	Cmd     string
 	MinArgs int
-	Action  func(string, []string)
+	Action  func(...string)
 }
 type Commands []Command
+
+func (s *Shodan) getCommand(name string) Command {
+	for _, c := range s.Commands {
+		if c.Cmd == name {
+			return c
+		}
+	}
+	return Command{}
+}
 
 func (s *Shodan) getCommands() Commands {
 	return Commands{
 		{"ds", 1,
-			func(cmd string, args []string) {
+			func(args ...string) {
 				v := ds.Value{}
 				datastream.Get(args[0], &v)
 				if v.Value != nil {
@@ -31,23 +40,23 @@ func (s *Shodan) getCommands() Commands {
 			},
 		},
 		{"echo", 1,
-			func(cmd string, args []string) {
+			func(args ...string) {
 				s.Say(strings.Join(args, " "))
 			},
 		},
 		{"update", 1,
-			func(cmd string, args []string) {
+			func(args ...string) {
 				s.Say("update Gideon")
 				s.UpdateGideon()
 			},
 		},
 		{"lightOn", 1,
-			func(cmd string, args []string) {
+			func(args ...string) {
 				s.LightOn(args[0])
 			},
 		},
 		{"imat", 1,
-			func(cmd string, args []string) {
+			func(args ...string) {
 				datastream.SetWhereIAm(args[0])
 				err := s.Machines["place"].Trigger(args[0], s.States["place"], s.DB)
 				if err != nil {
@@ -56,29 +65,29 @@ func (s *Shodan) getCommands() Commands {
 			},
 		},
 		{"time", 0,
-			func(cmd string, args []string) {
+			func(args ...string) {
 				s.Say(fmt.Sprintf("%s (%s)", time.Now().Format("15:04"), personal.GetDaytime()))
 			},
 		},
 		{"debug", 0,
-			func(cmd string, args []string) {
+			func(args ...string) {
 				s.Flags["debug"] = true
 				s.Say("debug on")
 			},
 		},
 		{"w", 0,
-			func(cmd string, args []string) {
+			func(args ...string) {
 				w := weather.GetWeather()
 				s.Say(fmt.Sprintf("%s - %v°", w.Weather, w.TempC))
 			},
 		},
 		{"whereiam", 0,
-			func(cmd string, args []string) {
+			func(args ...string) {
 				s.Say(fmt.Sprintf("U r at %s", s.States["place"].GetState()))
 			},
 		},
 		{"restart", 0,
-			func(cmd string, args []string) {
+			func(args ...string) {
 				if len(args) == 0 {
 					s.Say("Restarting...")
 					os.Exit(1)
@@ -91,8 +100,10 @@ func (s *Shodan) getCommands() Commands {
 			},
 		},
 		{"cmd", 2,
-			func(cmd string, args []string) {
+			func(args ...string) {
 				s.Say("sending command")
+				storage.ReportEvent("command",
+					fmt.Sprintf("%s.%s(%s)", args[0], args[1], strings.Join(args[2:], ", ")))
 				result := datastream.SendCommand(ds.Command{
 					args[1], nil, args[0], "Averrin",
 				})
@@ -104,7 +115,7 @@ func (s *Shodan) getCommands() Commands {
 			},
 		},
 		{"status", 0,
-			func(cmd string, args []string) {
+			func(args ...string) {
 				for k, v := range s.States {
 					s.Say(fmt.Sprintf("%s: %s", k, v.GetState()))
 				}
@@ -117,16 +128,62 @@ func (s *Shodan) getCommands() Commands {
 			},
 		},
 		{"notes", 1,
-			func(cmd string, args []string) {
+			func(args ...string) {
 				switch {
 				case args[0] == "list":
 					notes := storage.GetNotes()
-					for _, n := range notes {
-						s.Say(n.Text)
+					if len(notes) > 0 {
+						s.Say("notes:")
+						for _, n := range notes {
+							s.Say(n.Text)
+						}
+					} else {
+						s.Say("no notes")
 					}
 				case args[0] == "clear":
 					storage.ClearNotes()
 					s.Say("cleared")
+				}
+			},
+		},
+		{"pcActivity", 1,
+			func(args ...string) {
+				pc := args[0]
+				datastream.SetValue("pc", pc)
+				storage.ReportEvent("pcActivity", pc)
+				var err error
+				if personal.GetActivity(datastream) {
+					if s.States["place"].GetState() != "home" && !s.Flags["pc activity notify"] {
+						s.Say("pc without master")
+						storage.ReportEvent("pcActivityWithoutMe", pc)
+						s.Flags["pc activity notify"] = true
+						go func() {
+							time.Sleep(2 * time.Hour)
+							s.Flags["pc activity notify"] = false
+						}()
+					}
+					err = s.Machines["activity"].Trigger("active", s.States["activity"], s.DB)
+				} else {
+					err = s.Machines["activity"].Trigger("idle", s.States["activity"], s.DB)
+				}
+				if err != nil {
+					log.Println(err)
+				}
+			},
+		},
+		{"phoneActivity", 1,
+			func(args ...string) {
+				display := args[0]
+				datastream.SetValue("display", display)
+				storage.ReportEvent("displayActivity", display)
+				var err error
+				if personal.GetActivity(datastream) {
+					err = s.Machines["activity"].Trigger("active", s.States["activity"], s.DB)
+				} else {
+					err = s.Machines["activity"].Trigger("idle", s.States["activity"], s.DB)
+				}
+				if err != nil {
+					log.Println(err)
 				}
 			},
 		},
@@ -142,7 +199,7 @@ func (s *Shodan) dispatchMessages(m string) {
 		_ = args
 		for _, c := range s.Commands {
 			if cmd == c.Cmd && len(args) >= c.MinArgs {
-				c.Action(cmd, args)
+				c.Action(args...)
 			}
 		}
 	} else {
