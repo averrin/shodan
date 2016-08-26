@@ -45,6 +45,11 @@ func NewPlaceMachine(state *PlaceState, shodan *Shodan) *transition.StateMachine
 			}
 		}()
 		return nil
+	}).Exit(func(state interface{}, tx *gorm.DB) error {
+		if shodan.LastTimes["home leave"].IsZero() {
+			shodan.LastTimes["home leave"] = time.Now()
+		}
+		return nil
 	})
 	m.State("village")
 	m.State("pavel")
@@ -52,6 +57,7 @@ func NewPlaceMachine(state *PlaceState, shodan *Shodan) *transition.StateMachine
 		s := state.(*PlaceState)
 		shodan.Say("at home")
 		if time.Now().Sub(shodan.LastTimes["home leave"]).Minutes() > 15 {
+			shodan.LastTimes["home leave"] = time.Time{}
 			datastream.SendCommand(ds.Command{
 				"sh:Прихожая 1:On", nil, "gideon", "Shodan",
 			})

@@ -99,5 +99,8 @@ func getStrings() map[string]ShodanString {
 		"wrong request": {
 			"Ты, наверное, что-то другое хотел спросить.",
 		},
+		"sending command": {
+			"Я отправила, но ничего не обещаю.",
+		},
 	}
 }

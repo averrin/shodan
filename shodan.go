@@ -398,6 +398,7 @@ func (s *Shodan) dispatchMessages(m string) {
 			s.Say("Restarting...")
 			os.Exit(1)
 		case cmd == "cmd" && len(args) >= 2:
+			s.Say("sending command")
 			datastream.SendCommand(ds.Command{
 				args[1], nil, args[0], "Averrin",
 			})
