@@ -78,7 +78,7 @@ func NewShodan() *Shodan {
 	// pushbullet = pb.Connect(viper.GetStringMapString("pushbullet"))
 	datastream = ds.Connect(viper.GetStringMapString("datastream"))
 	storage = stor.Connect(viper.GetStringMapString("storage"))
-	attendance := at.Connect(viper.GetStringMapString("attendance"))
+	attendance = at.Connect(viper.GetStringMapString("attendance"))
 	if !*nobot {
 		telegram = tg.Connect(viper.GetStringMapString("telegram"))
 	}
