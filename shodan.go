@@ -31,7 +31,7 @@ var weather wu.WUnderground
 var datastream *ds.DataStream
 var storage *stor.Storage
 var personal p.Personal
-var attendance *at.Info
+var attendance at.Attendance
 var nobot *bool
 
 // var eventghost *eg.EventGhost
@@ -78,7 +78,7 @@ func NewShodan() *Shodan {
 	// pushbullet = pb.Connect(viper.GetStringMapString("pushbullet"))
 	datastream = ds.Connect(viper.GetStringMapString("datastream"))
 	storage = stor.Connect(viper.GetStringMapString("storage"))
-	attendance = at.Connect(viper.GetStringMapString("attendance")).GetAttendance()
+	attendance := at.Connect(viper.GetStringMapString("attendance"))
 	if !*nobot {
 		telegram = tg.Connect(viper.GetStringMapString("telegram"))
 	}
@@ -143,7 +143,7 @@ func (s *Shodan) Serve() {
 	tchan := make(chan time.Duration)
 	go func(c chan time.Duration) {
 		for {
-			_, _, sinceDI, _, _ := attendance.GetHomeTime()
+			_, _, sinceDI, _, _ := attendance.GetAttendance().GetHomeTime()
 			c <- sinceDI
 			time.Sleep(3 * time.Minute)
 		}
@@ -189,7 +189,7 @@ func (s *Shodan) Serve() {
 			if t.Minutes() < 1 && s.LastPlace == "work" && s.Flags["late at work"] != true && time.Now().Hour() > 12 {
 				go func() {
 					time.Sleep(10 * time.Minute)
-					_, _, sinceDI, _, _ := attendance.GetHomeTime()
+					_, _, sinceDI, _, _ := attendance.GetAttendance().GetHomeTime()
 					if s.LastPlace == "work" {
 						if dt != "evening" && sinceDI.Minutes() < 1 {
 							s.Say("attendance glitch")
