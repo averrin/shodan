@@ -47,6 +47,18 @@ func (ds *DataStream) Heartbeat(key string) {
 	}()
 }
 
+type Status struct {
+	Sender    string
+	Timestamp time.Time
+	Success   bool
+	Result    interface{}
+}
+
+func (ds *DataStream) SendStatus(status Status) {
+	raw, _ := json.Marshal(status)
+	client.Publish(fmt.Sprintf("status:%s", status.Sender), string(raw))
+}
+
 func (ds *DataStream) GetHeartbeat(key string) chan bool {
 	channel := fmt.Sprintf("heartbeat:%s", key)
 	pubsub, _ := client.Subscribe(channel)
@@ -189,7 +201,21 @@ func (ds *DataStream) GetCommands(key string) (out chan Command) {
 	return out
 }
 
-func (ds *DataStream) SendCommand(cmd Command) {
+func (ds *DataStream) SendCommand(cmd Command) Status {
 	raw, _ := json.Marshal(cmd)
+	channel := fmt.Sprintf("status:%s", cmd.Reciever)
+	pubsub, _ := client.Subscribe(channel)
+	out := make(chan Status)
+	go func() {
+		defer pubsub.Close()
+		for {
+			msg, _ := pubsub.ReceiveMessage()
+			status := Status{}
+			json.Unmarshal([]byte(msg.Payload), &status)
+			out <- status
+			break
+		}
+	}()
 	client.Publish(fmt.Sprintf("commands:%s", cmd.Reciever), string(raw))
+	return <-out
 }

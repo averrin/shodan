@@ -281,9 +281,16 @@ func (s *Shodan) initAPI() {
 	})
 	http.HandleFunc("/cmd/", func(w http.ResponseWriter, r *http.Request) {
 		tokens := strings.Split(r.URL.Path[len("/cmd/"):], "/")
-		datastream.SendCommand(ds.Command{
+		s.Say("sending command")
+		s.Say(tokens[0])
+		result := datastream.SendCommand(ds.Command{
 			tokens[1], nil, tokens[0], "Shodan",
 		})
+		if result.Success {
+			s.Say("command success")
+		} else {
+			s.Say("command fail")
+		}
 		storage.ReportEvent("command", r.URL.Path[len("/cmd/"):])
 	})
 	http.HandleFunc("/psb/", func(w http.ResponseWriter, r *http.Request) {
@@ -407,9 +414,14 @@ func (s *Shodan) dispatchMessages(m string) {
 			os.Exit(1)
 		case cmd == "cmd" && len(args) >= 2:
 			s.Say("sending command")
-			datastream.SendCommand(ds.Command{
+			result := datastream.SendCommand(ds.Command{
 				args[1], nil, args[0], "Averrin",
 			})
+			if result.Success {
+				s.Say("command success")
+			} else {
+				s.Say("command fail")
+			}
 		case cmd == "status":
 			for k, v := range s.States {
 				s.Say(fmt.Sprintf("%s: %s", k, v.GetState()))
