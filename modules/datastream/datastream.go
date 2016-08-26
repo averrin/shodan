@@ -209,9 +209,13 @@ func (ds *DataStream) SendCommand(cmd Command) Status {
 	go func() {
 		defer pubsub.Close()
 		for {
-			msg, _ := pubsub.ReceiveMessage()
+			msg, err := pubsub.ReceiveMessage()
 			status := Status{}
-			json.Unmarshal([]byte(msg.Payload), &status)
+			if err == nil {
+				json.Unmarshal([]byte(msg.Payload), &status)
+			} else {
+				status.Success = false
+			}
 			out <- status
 			break
 		}
