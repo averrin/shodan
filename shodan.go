@@ -2,12 +2,8 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
 	"math/rand"
-	"net/http"
-	"os"
-	"strings"
 	"time"
 
 	at "github.com/averrin/shodan/modules/attendance"
@@ -49,6 +45,7 @@ type Shodan struct {
 	States    map[string]transition.Stater
 	LastTimes map[string]time.Time
 	Flags     map[string]bool
+	Commands  Commands
 	LastPlace string
 	DB        *gorm.DB
 }
@@ -66,6 +63,7 @@ func NewShodan() *Shodan {
 	s.Machines = map[string]*transition.StateMachine{}
 	s.States = map[string]transition.Stater{}
 	s.LastTimes = map[string]time.Time{}
+	s.Commands = s.getCommands()
 	s.Flags = map[string]bool{
 		"late at work":       false,
 		"debug":              false,
@@ -241,114 +239,6 @@ func (s *Shodan) Serve() {
 	}
 }
 
-func (s *Shodan) initAPI() {
-	http.HandleFunc("/battery/", func(w http.ResponseWriter, r *http.Request) {
-		level := r.URL.Path[len("/battery/"):]
-		datastream.SetValue("battery", level)
-		if level == "low" {
-			s.Say("low battery")
-			storage.ReportEvent("lowBattery", "")
-		}
-	})
-	http.HandleFunc("/dream/", func(w http.ResponseWriter, r *http.Request) {
-		status := r.URL.Path[len("/dream/"):]
-		datastream.SetValue("dream", status)
-		err := s.Machines["sleep"].Trigger(status, s.States["sleep"], s.DB)
-		if err != nil {
-			log.Println(status)
-			log.Println(err)
-		}
-		storage.ReportEvent(status, "")
-	})
-	http.HandleFunc("/power/", func(w http.ResponseWriter, r *http.Request) {
-		status := strings.TrimSpace(r.URL.Path[len("/power/"):])
-		storage.ReportEvent("power", status)
-		if s.States["sleep"].GetState() != "awake" {
-			err := s.Machines["sleep"].Trigger("awake", s.States["sleep"], s.DB)
-			if err != nil {
-				log.Println(err)
-			}
-		}
-	})
-	http.HandleFunc("/place/", func(w http.ResponseWriter, r *http.Request) {
-		place := strings.TrimSpace(r.URL.Path[len("/place/"):])
-		datastream.SetWhereIAm(place)
-		err := s.Machines["place"].Trigger(place, s.States["place"], s.DB)
-		if err != nil {
-			log.Println(place)
-			log.Println(err)
-		}
-	})
-	http.HandleFunc("/cmd/", func(w http.ResponseWriter, r *http.Request) {
-		tokens := strings.Split(r.URL.Path[len("/cmd/"):], "/")
-		s.Say("sending command")
-		s.Say(tokens[0])
-		result := datastream.SendCommand(ds.Command{
-			tokens[1], nil, tokens[0], "Shodan",
-		})
-		if result.Success {
-			s.Say("command success")
-		} else {
-			s.Say("command fail")
-		}
-		storage.ReportEvent("command", r.URL.Path[len("/cmd/"):])
-	})
-	http.HandleFunc("/psb/", func(w http.ResponseWriter, r *http.Request) {
-		message, _ := ioutil.ReadAll(r.Body)
-		s.Say(string(message))
-		defer r.Body.Close()
-	})
-	http.HandleFunc("/display/", func(w http.ResponseWriter, r *http.Request) {
-		display := strings.TrimSpace(r.URL.Path[len("/display/"):])
-		datastream.SetValue("display", display)
-		storage.ReportEvent("displayActivity", display)
-		var err error
-		if personal.GetActivity(datastream) {
-			err = s.Machines["activity"].Trigger("active", s.States["activity"], s.DB)
-		} else {
-			err = s.Machines["activity"].Trigger("idle", s.States["activity"], s.DB)
-		}
-		if err != nil {
-			log.Println(err)
-		}
-	})
-	http.HandleFunc("/alarm/", func(w http.ResponseWriter, r *http.Request) {
-		sensor := strings.TrimSpace(r.URL.Path[len("/alarm/"):])
-		storage.ReportEvent("alarm", sensor)
-		if s.States["place"].GetState() == "home" {
-			sensor = "at home"
-		}
-		s.Say(fmt.Sprintf("alarm %s", sensor))
-	})
-	http.HandleFunc("/pc/", func(w http.ResponseWriter, r *http.Request) {
-		pc := strings.TrimSpace(r.URL.Path[len("/pc/"):])
-		datastream.SetValue("pc", pc)
-		storage.ReportEvent("pcActivity", pc)
-		var err error
-		if personal.GetActivity(datastream) {
-			if s.States["place"].GetState() != "home" && !s.Flags["pc activity notify"] {
-				s.Say("pc without master")
-				storage.ReportEvent("pcActivityWithoutMe", pc)
-				s.Flags["pc activity notify"] = true
-				go func() {
-					time.Sleep(2 * time.Hour)
-					s.Flags["pc activity notify"] = false
-				}()
-			}
-			err = s.Machines["activity"].Trigger("active", s.States["activity"], s.DB)
-		} else {
-			err = s.Machines["activity"].Trigger("idle", s.States["activity"], s.DB)
-		}
-		if err != nil {
-			log.Println(err)
-		}
-	})
-	go func() {
-		log.Println("Start API")
-		log.Println(http.ListenAndServe(":"+viper.GetString("port"), nil))
-	}()
-}
-
 func (s *Shodan) LightOn(name string) {
 	datastream.SendCommand(ds.Command{
 		"light", map[string]interface{}{
@@ -362,87 +252,4 @@ func (s *Shodan) UpdateGideon() {
 	datastream.SendCommand(ds.Command{
 		"update", nil, "gideon", "Shodan",
 	})
-}
-
-func (s *Shodan) dispatchMessages(m string) {
-	storage.ReportEvent("message", m)
-	if strings.HasPrefix(m, "/") {
-		tokens := strings.Split(m, " ")
-		cmd := tokens[0][1:len(tokens[0])]
-		args := tokens[1:]
-		_ = args
-		switch {
-		case cmd == "ds":
-			v := ds.Value{}
-			datastream.Get(args[0], &v)
-			if v.Value != nil {
-				s.Say(v.Value.(string))
-			} else {
-				s.Say("wrong request")
-			}
-		case cmd == "echo":
-			s.Say(strings.Join(args, " "))
-		case cmd == "update":
-			s.Say("update Gideon")
-			s.UpdateGideon()
-		case cmd == "lightOn" && len(args) > 0:
-			s.LightOn(args[0])
-		case cmd == "imat" && len(args) > 0:
-			datastream.SetWhereIAm(args[0])
-			err := s.Machines["place"].Trigger(args[0], s.States["place"], s.DB)
-			if err != nil {
-				log.Println(err)
-			}
-		case cmd == "time":
-			s.Say(fmt.Sprintf("%s (%s)", time.Now().Format("15:04"), personal.GetDaytime()))
-		case cmd == "debug":
-			s.Flags["debug"] = true
-			s.Say("debug on")
-		case cmd == "w":
-			w := weather.GetWeather()
-			s.Say(fmt.Sprintf("%s - %v°", w.Weather, w.TempC))
-		case cmd == "whereiam":
-			s.Say(fmt.Sprintf("U r at %s", s.States["place"].GetState()))
-		case cmd == "restart" && len(args) > 0:
-			if args[0] == "gideon" {
-				datastream.SendCommand(ds.Command{
-					"kill", nil, "gideon", "Averrin",
-				})
-			}
-		case cmd == "restart" && len(args) == 0:
-			s.Say("Restarting...")
-			os.Exit(1)
-		case cmd == "cmd" && len(args) >= 2:
-			s.Say("sending command")
-			result := datastream.SendCommand(ds.Command{
-				args[1], nil, args[0], "Averrin",
-			})
-			if result.Success {
-				s.Say("command success")
-			} else {
-				s.Say("command fail")
-			}
-		case cmd == "status":
-			for k, v := range s.States {
-				s.Say(fmt.Sprintf("%s: %s", k, v.GetState()))
-			}
-			for k, v := range s.Flags {
-				s.Say(fmt.Sprintf("%s: %v", k, v))
-			}
-			for k, v := range s.LastTimes {
-				s.Say(fmt.Sprintf("%s: %s", k, v))
-			}
-		case cmd == "list":
-			notes := storage.GetNotes()
-			for _, n := range notes {
-				s.Say(n.Text)
-			}
-		case cmd == "clear":
-			storage.ClearNotes()
-			s.Say("cleared")
-		}
-	} else {
-		storage.SaveNote(m)
-		s.Say("saved")
-	}
 }
