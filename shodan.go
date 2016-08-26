@@ -305,6 +305,14 @@ func (s *Shodan) initAPI() {
 			log.Println(err)
 		}
 	})
+	http.HandleFunc("/alarm/", func(w http.ResponseWriter, r *http.Request) {
+		sensor := strings.TrimSpace(r.URL.Path[len("/alarm/"):])
+		storage.ReportEvent("alarm", sensor)
+		if s.States["place"].GetState() == "home" {
+			sensor = "at home"
+		}
+		s.Say(fmt.Sprintf("alarm %s", sensor))
+	})
 	http.HandleFunc("/pc/", func(w http.ResponseWriter, r *http.Request) {
 		pc := strings.TrimSpace(r.URL.Path[len("/pc/"):])
 		datastream.SetValue("pc", pc)

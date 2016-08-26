@@ -102,5 +102,14 @@ func getStrings() map[string]ShodanString {
 		"sending command": {
 			"Я отправила, но ничего не обещаю.",
 		},
+		"alarm wall": {
+			"Кто-то бродит по квартире!",
+		},
+		"alarm door": {
+			"Дверь открыта!",
+		},
+		"alarm at home": {
+			"Балуешься? Не пугай меня так!",
+		},
 	}
 }
