@@ -2,6 +2,7 @@ package eventghost
 
 import (
 	"log"
+	"time"
 
 	"golang.org/x/net/websocket"
 )
@@ -24,7 +25,13 @@ func (eg *EventGhost) Connect() {
 	var err error
 	socket, err = websocket.Dial("ws://"+creds["host"], "", "http://"+creds["host"])
 	if err != nil {
-		log.Println(err)
+		go func() {
+			for err != nil {
+				log.Println(err)
+				socket, err = websocket.Dial("ws://"+creds["host"], "", "http://"+creds["host"])
+				time.Sleep(5 * time.Second)
+			}
+		}()
 	}
 }
 

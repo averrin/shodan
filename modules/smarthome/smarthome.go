@@ -65,10 +65,13 @@ func Connect(creds map[string]string) (sh SmartHome) {
 
 func (sh SmartHome) Get(url string, value interface{}) {
 	response, err := http.Get(url)
-	defer response.Body.Close()
 	if err != nil || response.StatusCode != 200 {
-		b, _ := ioutil.ReadAll(response.Body)
-		log.Println("SmartHome error", response.StatusCode, b)
+		if response != nil {
+			b, _ := ioutil.ReadAll(response.Body)
+			log.Println("SmartHome error", response.StatusCode, b)
+		} else {
+			log.Print("No SmartHome detected.")
+		}
 		return
 	}
 

@@ -111,5 +111,11 @@ func getStrings() map[string]ShodanString {
 		"alarm at home": {
 			"Балуешься? Не пугай меня так!",
 		},
+		"command success": {
+			"Вроде все сработало.",
+		},
+		"command fail": {
+			"Упч, что-то не то.",
+		},
 	}
 }
