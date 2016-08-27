@@ -72,7 +72,7 @@ func (s *Shodan) initAPI() {
 		} else if hook.Build.Status == "success" {
 			s.Say("build success")
 		} else if hook.Build.Status == "error" {
-			s.Say("build failde")
+			s.Say("build failed")
 		}
 	})
 	http.HandleFunc("/alarm/", func(w http.ResponseWriter, r *http.Request) {
