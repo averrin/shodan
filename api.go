@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -57,8 +58,15 @@ func (s *Shodan) initAPI() {
 	})
 	http.HandleFunc("/codeship", func(w http.ResponseWriter, r *http.Request) {
 		message, _ := ioutil.ReadAll(r.Body)
-		s.Say(string(message))
+		// s.Say(string(message))
 		defer r.Body.Close()
+		hook := CodeshipHook{}
+		json.Unmarshal(message, &hook)
+		if hook.Build.Status == "testing" {
+			s.Say("build started")
+		} else {
+			s.Say(hook.Build.Status)
+		}
 	})
 	http.HandleFunc("/alarm/", func(w http.ResponseWriter, r *http.Request) {
 		sensor := strings.TrimSpace(r.URL.Path[len("/alarm/"):])
@@ -82,4 +90,23 @@ func (s *Shodan) createHandler(route string, command string) func(http.ResponseW
 			cmd.Action(tokens...)
 		}
 	}
+}
+
+type CodeshipHook struct {
+	Build struct {
+		BuildURL        string `json:"build_url"`
+		CommitURL       string `json:"commit_url"`
+		ProjectID       int    `json:"project_id"`
+		BuildID         int    `json:"build_id"`
+		Status          string `json:"status"`
+		ProjectName     string `json:"project_name"`
+		ProjectFullName string `json:"project_full_name"`
+		CommitID        string `json:"commit_id"`
+		ShortCommitID   string `json:"short_commit_id"`
+		Message         string `json:"message"`
+		Committer       string `json:"committer"`
+		Branch          string `json:"branch"`
+		StartedAt       string `json:"started_at"`
+		FinishedAt      string `json:"finished_at"`
+	} `json:"build"`
 }
