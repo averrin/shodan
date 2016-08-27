@@ -55,7 +55,9 @@ func NewPlaceMachine(state *PlaceState, shodan *Shodan) *transition.StateMachine
 	m.State("pavel")
 	m.State("home").Enter(func(state interface{}, tx *gorm.DB) error {
 		s := state.(*PlaceState)
-		shodan.Say("at home")
+		if time.Now().Sub(shodan.LastTimes["start"]).Minutes() > 15 {
+			shodan.Say("at home")
+		}
 		if time.Now().Sub(shodan.LastTimes["home leave"]).Minutes() > 15 {
 			shodan.LastTimes["home leave"] = time.Time{}
 			datastream.SendCommand(ds.Command{

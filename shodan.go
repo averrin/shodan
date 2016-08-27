@@ -176,6 +176,32 @@ func (s *Shodan) Serve() {
 	datastream.Heartbeat("shodan")
 	s.Say("hello")
 	storage.ReportEvent("startShodan", "")
+
+	gideon := datastream.GetHeartbeat("gideon")
+	gideonOnline := true
+	go func() {
+		for {
+			select {
+			case ping, ok := <-gideon:
+				if ok {
+					if !ping {
+						s.Say("gideon away")
+						gideonOnline = false
+					} else {
+						if !gideonOnline {
+							s.Say("gideon started")
+						}
+						gideonOnline = true
+					}
+				} else {
+					s.Say("gideon away")
+					gideonOnline = false
+				}
+			default:
+			}
+		}
+	}()
+
 	for {
 		select {
 		case m := <-ichan:

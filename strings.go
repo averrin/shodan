@@ -129,5 +129,11 @@ func getStrings() map[string]ShodanString {
 		"build failed": {
 			"Не собралось, пойди глянь.",
 		},
+		"gideon away": {
+			"Гидеон куда-то пропал.",
+		},
+		"gideon started": {
+			"Гидеон проснулся.",
+		},
 	}
 }
