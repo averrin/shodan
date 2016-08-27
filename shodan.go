@@ -178,24 +178,28 @@ func (s *Shodan) Serve() {
 	storage.ReportEvent("startShodan", "")
 
 	gideon := datastream.GetHeartbeat("gideon")
-	gideonOnline := true
+	s.Flags["gideon online"] = true
 	go func() {
 		for {
 			select {
 			case ping, ok := <-gideon:
 				if ok {
 					if !ping {
-						s.Say("gideon away")
-						gideonOnline = false
+						if s.Flags["gideon online"] == true {
+							s.Say("gideon away")
+						}
+						s.Flags["gideon online"] = false
 					} else {
-						if !gideonOnline {
+						if !s.Flags["gideon online"] {
 							s.Say("gideon started")
 						}
-						gideonOnline = true
+						s.Flags["gideon online"] = true
 					}
 				} else {
-					s.Say("gideon away")
-					gideonOnline = false
+					if s.Flags["gideon online"] == true {
+						s.Say("gideon away")
+					}
+					s.Flags["gideon online"] = false
 				}
 			default:
 			}
