@@ -14,10 +14,10 @@ var mapping map[string]string
 
 func (s *Shodan) initAPI() {
 	mapping = map[string]string{
-		"place/": "imat",
-		"cmd/": "cmd",
+		"place/":   "imat",
+		"cmd/":     "cmd",
 		"display/": "phoneActivity",
-		"pc/": "pcActivity",
+		"pc/":      "pcActivity",
 	}
 	for route, command := range mapping {
 		http.HandleFunc("/"+route, s.createHandler(route, command))
@@ -74,11 +74,12 @@ func (s *Shodan) initAPI() {
 	}()
 }
 
-func createHandler(route string, command string) func(http.ResponseWriter, *http.Request){
+func createHandler(route string, command string) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		tokens := strings.Split(r.URL.Path[len(route)+1:], "/")
 		cmd := s.getCommand(command)
 		if cmd.Cmd != "" {
 			cmd.Action(tokens...)
 		}
+	}
 }
