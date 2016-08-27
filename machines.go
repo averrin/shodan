@@ -64,6 +64,9 @@ func NewPlaceMachine(state *PlaceState, shodan *Shodan) *transition.StateMachine
 			datastream.SendCommand(ds.Command{
 				"sh:Прихожая 2:On", nil, "gideon", "Shodan",
 			})
+			datastream.SendCommand(ds.Command{
+				"sh:Alarm:Unlock", nil, "gideon", "Shodan",
+			})
 		}
 		pcStatus := ds.Value{}
 		datastream.Get("pc", &pcStatus)
@@ -79,6 +82,14 @@ func NewPlaceMachine(state *PlaceState, shodan *Shodan) *transition.StateMachine
 		return nil
 	}).Exit(func(state interface{}, tx *gorm.DB) error {
 		shodan.LastTimes["home leave"] = time.Now()
+		go func() {
+			time.Sleep(5 * time.Minute)
+			if s.GetState() != "home" {
+				datastream.SendCommand(ds.Command{
+					"sh:Alarm:Lock", nil, "gideon", "Shodan",
+				})
+			}
+		}()
 		return nil
 	})
 	m.State("work").Exit(func(state interface{}, tx *gorm.DB) error {
