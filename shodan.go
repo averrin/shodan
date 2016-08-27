@@ -176,35 +176,7 @@ func (s *Shodan) Serve() {
 	datastream.Heartbeat("shodan")
 	s.Say("hello")
 	storage.ReportEvent("startShodan", "")
-
-	gideon := datastream.GetHeartbeat("gideon")
-	s.Flags["gideon online"] = true
-	go func() {
-		for {
-			select {
-			case ping, ok := <-gideon:
-				if ok {
-					if !ping {
-						if s.Flags["gideon online"] == true {
-							s.Say("gideon away")
-						}
-						s.Flags["gideon online"] = false
-					} else {
-						if !s.Flags["gideon online"] {
-							s.Say("gideon started")
-						}
-						s.Flags["gideon online"] = true
-					}
-				} else {
-					if s.Flags["gideon online"] == true {
-						s.Say("gideon away")
-					}
-					s.Flags["gideon online"] = false
-				}
-			default:
-			}
-		}
-	}()
+	go s.trackGideon()
 
 	for {
 		select {
@@ -286,5 +258,36 @@ func (s *Shodan) UpdateGideon() {
 		s.Say("command success")
 	} else {
 		s.Say("command fail")
+	}
+}
+
+func (s *Shodan) trackGideon() {
+	gideon := datastream.GetHeartbeat("gideon")
+	s.Flags["gideon online"] = true
+	s.LastTimes["gideon seen"] = time.Time{}
+	for {
+		select {
+		case ping, ok := <-gideon:
+			if ok {
+				if !ping {
+					if s.Flags["gideon online"] == true && (s.LastTimes["gideon seen"].IsZero() || time.Now().Sub(s.LastTimes["gideon offline"]) > time.Duration(5*time.Minute)) {
+						s.Say("gideon away")
+					}
+					s.Flags["gideon online"] = false
+				} else {
+					if !s.Flags["gideon online"] {
+						s.Say("gideon started")
+					}
+					s.Flags["gideon online"] = true
+					s.LastTimes["gideon seen"] = time.Now()
+				}
+			} else {
+				if s.Flags["gideon online"] == true {
+					s.Say("gideon away")
+				}
+				s.Flags["gideon online"] = false
+			}
+		default:
+		}
 	}
 }
