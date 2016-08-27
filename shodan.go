@@ -265,6 +265,7 @@ func (s *Shodan) trackGideon() {
 	gideon := datastream.GetHeartbeat("gideon")
 	s.Flags["gideon online"] = true
 	s.LastTimes["gideon seen"] = time.Time{}
+	notified := false
 	for {
 		select {
 		case ping, ok := <-gideon:
@@ -272,11 +273,13 @@ func (s *Shodan) trackGideon() {
 				if !ping {
 					if s.Flags["gideon online"] == true && (s.LastTimes["gideon seen"].IsZero() || time.Now().Sub(s.LastTimes["gideon seen"]) > time.Duration(5*time.Minute)) {
 						s.Say("gideon away")
+						notified = true
 					}
 					s.Flags["gideon online"] = false
 				} else {
-					if !s.Flags["gideon online"] {
+					if !s.Flags["gideon online"] && notified {
 						s.Say("gideon started")
+						notified = false
 					}
 					s.Flags["gideon online"] = true
 					s.LastTimes["gideon seen"] = time.Now()
