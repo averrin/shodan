@@ -10,7 +10,18 @@ import (
 	"github.com/spf13/viper"
 )
 
+var mapping map[string]string
+
 func (s *Shodan) initAPI() {
+	mapping = map[string]string{
+		"place/": "imat",
+		"cmd/": "cmd",
+		"display/": "phoneActivity",
+		"pc/": "pcActivity",
+	}
+	for route, command := range mapping {
+		http.HandleFunc("/"+route, s.createHandler(route, command))
+	}
 	http.HandleFunc("/battery/", func(w http.ResponseWriter, r *http.Request) {
 		level := r.URL.Path[len("/battery/"):]
 		datastream.SetValue("battery", level)
@@ -39,33 +50,15 @@ func (s *Shodan) initAPI() {
 			}
 		}
 	})
-	http.HandleFunc("/place/", func(w http.ResponseWriter, r *http.Request) {
-		place := strings.TrimSpace(r.URL.Path[len("/place/"):])
-		datastream.SetWhereIAm(place)
-		err := s.Machines["place"].Trigger(place, s.States["place"], s.DB)
-		if err != nil {
-			log.Println(place)
-			log.Println(err)
-		}
-	})
-	http.HandleFunc("/cmd/", func(w http.ResponseWriter, r *http.Request) {
-		tokens := strings.Split(r.URL.Path[len("/cmd/"):], "/")
-		cmd := s.getCommand("cmd")
-		if cmd.Cmd != "" {
-			cmd.Action(tokens...)
-		}
-	})
-	http.HandleFunc("/psb/", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/psb", func(w http.ResponseWriter, r *http.Request) {
 		message, _ := ioutil.ReadAll(r.Body)
 		s.Say(string(message))
 		defer r.Body.Close()
 	})
-	http.HandleFunc("/display/", func(w http.ResponseWriter, r *http.Request) {
-		status := strings.TrimSpace(r.URL.Path[len("/display/"):])
-		cmd := s.getCommand("phoneActivity")
-		if cmd.Cmd != "" {
-			cmd.Action(status)
-		}
+	http.HandleFunc("/codeship", func(w http.ResponseWriter, r *http.Request) {
+		message, _ := ioutil.ReadAll(r.Body)
+		s.Say(string(message))
+		defer r.Body.Close()
 	})
 	http.HandleFunc("/alarm/", func(w http.ResponseWriter, r *http.Request) {
 		sensor := strings.TrimSpace(r.URL.Path[len("/alarm/"):])
@@ -75,15 +68,17 @@ func (s *Shodan) initAPI() {
 		}
 		s.Say(fmt.Sprintf("alarm %s", sensor))
 	})
-	http.HandleFunc("/pc/", func(w http.ResponseWriter, r *http.Request) {
-		status := strings.TrimSpace(r.URL.Path[len("/pc/"):])
-		cmd := s.getCommand("pcActivity")
-		if cmd.Cmd != "" {
-			cmd.Action(status)
-		}
-	})
 	go func() {
 		log.Println("Start API")
 		log.Println(http.ListenAndServe(":"+viper.GetString("port"), nil))
 	}()
+}
+
+func createHandler(route string, command string) func(http.ResponseWriter, *http.Request){
+	return func(w http.ResponseWriter, r *http.Request) {
+		tokens := strings.Split(r.URL.Path[len(route)+1:], "/")
+		cmd := s.getCommand(command)
+		if cmd.Cmd != "" {
+			cmd.Action(tokens...)
+		}
 }

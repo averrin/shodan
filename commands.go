@@ -102,8 +102,9 @@ func (s *Shodan) getCommands() Commands {
 		{"cmd", 2,
 			func(args ...string) {
 				s.Say("sending command")
-				storage.ReportEvent("command",
-					fmt.Sprintf("%s.%s(%s)", args[0], args[1], strings.Join(args[2:], ", ")))
+				sign := fmt.Sprintf("%s.%s(%s)", args[0], args[1], strings.Join(args[2:], ", "))
+				s.Say(sign)
+				storage.ReportEvent("command", sign)
 				result := datastream.SendCommand(ds.Command{
 					args[1], nil, args[0], "Averrin",
 				})
