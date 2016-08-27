@@ -249,7 +249,12 @@ func (s *Shodan) LightOn(name string) {
 }
 
 func (s *Shodan) UpdateGideon() {
-	datastream.SendCommand(ds.Command{
+	result := datastream.SendCommand(ds.Command{
 		"update", nil, "gideon", "Shodan",
 	})
+	if result.Success {
+		s.Say("command success")
+	} else {
+		s.Say("command fail")
+	}
 }
