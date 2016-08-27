@@ -270,7 +270,7 @@ func (s *Shodan) trackGideon() {
 		case ping, ok := <-gideon:
 			if ok {
 				if !ping {
-					if s.Flags["gideon online"] == true && (s.LastTimes["gideon seen"].IsZero() || time.Now().Sub(s.LastTimes["gideon offline"]) > time.Duration(5*time.Minute)) {
+					if s.Flags["gideon online"] == true && (s.LastTimes["gideon seen"].IsZero() || time.Now().Sub(s.LastTimes["gideon seen"]) > time.Duration(5*time.Minute)) {
 						s.Say("gideon away")
 					}
 					s.Flags["gideon online"] = false
