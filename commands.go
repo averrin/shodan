@@ -14,7 +14,7 @@ type Command struct {
 	Cmd     string
 	MinArgs int
 	Action  func(...string)
-	URL     string
+	// URL     string
 }
 type Commands []Command
 
