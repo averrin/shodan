@@ -23,6 +23,11 @@ func (s *Shodan) initAPI() {
 	for route, command := range mapping {
 		http.HandleFunc("/"+route, s.createHandler(route, command))
 	}
+	http.HandleFunc("/location/", func(w http.ResponseWriter, r *http.Request) {
+		location := r.URL.Path[len("/location/"):]
+		storage.ReportEvent("location", location)
+		datastream.SetValue("location", location)
+	})
 	http.HandleFunc("/battery/", func(w http.ResponseWriter, r *http.Request) {
 		level := r.URL.Path[len("/battery/"):]
 		datastream.SetValue("battery", level)
