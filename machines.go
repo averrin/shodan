@@ -81,6 +81,7 @@ func NewPlaceMachine(state *PlaceState, shodan *Shodan) *transition.StateMachine
 		}
 		return nil
 	}).Exit(func(state interface{}, tx *gorm.DB) error {
+		s := state.(*PlaceState)
 		shodan.LastTimes["home leave"] = time.Now()
 		go func() {
 			time.Sleep(5 * time.Minute)

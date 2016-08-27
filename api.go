@@ -74,7 +74,7 @@ func (s *Shodan) initAPI() {
 	}()
 }
 
-func createHandler(route string, command string) func(http.ResponseWriter, *http.Request) {
+func (s *Shodan) createHandler(route string, command string) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		tokens := strings.Split(r.URL.Path[len(route)+1:], "/")
 		cmd := s.getCommand(command)
