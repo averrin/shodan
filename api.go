@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/spf13/viper"
@@ -126,7 +127,7 @@ type CodeshipHook struct {
 func (s *Shodan) processPSB(psb string) string {
 	re := regexp.MustCompile(`Доступно ([\d ]+).*`)
 	amountRaw := re.FindStringSubmatch(psb)[0]
-	amount, _ := iconv.Atoi(strings.TrimSpace(amountRaw))
-	storage.ReportEvent("amount", fmt.Sprintf("%s", amount))
-	return fmt.Sprintf("Доступно: %s", amount)
+	amount, _ := strconv.Atoi(strings.TrimSpace(amountRaw))
+	storage.ReportEvent("amount", fmt.Sprintf("%d", amount))
+	return fmt.Sprintf("Доступно: %d", amount)
 }
