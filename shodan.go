@@ -252,7 +252,9 @@ func (s *Shodan) LightOn(name string) {
 
 func (s *Shodan) GideonNotify(msg string) {
 	result := datastream.SendCommand(ds.Command{
-		"notify", msg, "gideon", "Shodan",
+		"notify", map[string]interface{}{
+			"message": msg,
+		}, "gideon", "Shodan",
 	})
 	if result.Success {
 		log.Println("command success")
