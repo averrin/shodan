@@ -125,10 +125,10 @@ type CodeshipHook struct {
 }
 
 func (s *Shodan) processPSB(psb string) string {
-	re := regexp.MustCompile(`Доступно( [\d ]+)\..*`)
+	re := regexp.MustCompile(`Доступно ([\d ]+).*`)
 	amountRaw := re.FindStringSubmatch(psb)
 	log.Println(amountRaw)
-	amount, _ := strconv.Atoi(strings.TrimSpace(amountRaw[0]))
+	amount, _ := strconv.Atoi(strings.TrimSpace(amountRaw[1]))
 	log.Println(amount)
 	storage.ReportEvent("amount", fmt.Sprintf("%d", amount))
 	return fmt.Sprintf("Доступно: %d", amount)
