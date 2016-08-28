@@ -99,6 +99,7 @@ func (s *Shodan) getCommands() Commands {
 					os.Exit(1)
 				}
 				if args[0] == "gideon" {
+					s.Say("restart gideon")
 					datastream.SendCommand(ds.Command{
 						"kill", nil, "gideon", "Averrin",
 					})
