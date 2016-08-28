@@ -139,5 +139,11 @@ func getStrings() map[string]ShodanString {
 		"notes:": {
 			"Заметки:",
 		},
+		"money income:": {
+			"Поздравляю с прибылью!",
+		},
+		"money outcome:": {
+			"Надеюсь, ты купил что-нить нужное. Ну или хотя бы приятное.",
+		},
 	}
 }
