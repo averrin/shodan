@@ -102,6 +102,7 @@ func (wu WUnderground) GetWeather() (w Weather) {
 	defer response.Body.Close()
 	if err != nil || response.StatusCode != 200 {
 		b, _ := ioutil.ReadAll(response.Body)
+		log.Println("Weather error", response.StatusCode, string(b))
 		return w
 	}
 
