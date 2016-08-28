@@ -250,6 +250,17 @@ func (s *Shodan) LightOn(name string) {
 	})
 }
 
+func (s *Shodan) GideonNotify(msg string) {
+	result := datastream.SendCommand(ds.Command{
+		"notify", msg, "gideon", "Shodan",
+	})
+	if result.Success {
+		log.Println("command success")
+	} else {
+		log.Println("command fail")
+	}
+}
+
 func (s *Shodan) UpdateGideon() {
 	result := datastream.SendCommand(ds.Command{
 		"update", nil, "gideon", "Shodan",

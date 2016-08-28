@@ -45,6 +45,11 @@ func (s *Shodan) getCommands() Commands {
 				s.Say(strings.Join(args, " "))
 			},
 		},
+		{"notify", 1,
+			func(args ...string) {
+				s.GideonNotify(args[0])
+			},
+		},
 		{"update", 1,
 			func(args ...string) {
 				s.Say("update Gideon")
