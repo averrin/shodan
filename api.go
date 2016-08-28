@@ -135,7 +135,7 @@ func (s *Shodan) processPSB(psb string) string {
 	value := ds.Value{}
 	datastream.Get("amount", value)
 	lastAmount := 0
-	if value.Value != "" {
+	if value.Value != nil {
 		lastAmount, _ = strconv.Atoi(value.Value.(string))
 	}
 	if lastAmount != amount {
