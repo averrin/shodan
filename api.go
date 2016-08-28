@@ -136,7 +136,9 @@ func (s *Shodan) processPSB(psb string) string {
 	datastream.Get("amount", value)
 	lastAmount := 0
 	if value.Value != nil {
-		lastAmount, _ = strconv.Atoi(value.Value.(string))
+		log.Println(value.Value.(string))
+		lastAmount, err = strconv.Atoi(value.Value.(string))
+		log.Println(err)
 	}
 	if lastAmount != amount {
 		diff := amount - lastAmount
