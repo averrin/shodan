@@ -131,5 +131,21 @@ func (s *Shodan) processPSB(psb string) string {
 	amount, err := strconv.Atoi(strings.Replace(amountRaw[1], " ", "", -1))
 	log.Println(amount, err)
 	storage.ReportEvent("amount", fmt.Sprintf("%d", amount))
+	value := ds.Value{}
+	datastream.Get("amount", value)
+	lastAmount := 0
+	if value.Value != "" {
+		lastAmount = strconv.Atoi(value.Value)
+	}
+	if lastAmount != amount {
+		diff := lastAmount - amount
+		storage.ReportEvent("amountDiff", diff)
+		if diff > 0 {
+			s.Say("money income")
+		} else {
+			s.Say("money outcome")
+		}
+	}
+	datastream.SetValue("amount", amount)
 	return fmt.Sprintf("Доступно: %d", amount)
 }
