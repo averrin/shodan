@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 
+	ds "github.com/averrin/shodan/modules/datastream"
 	"github.com/spf13/viper"
 )
 
@@ -135,17 +136,17 @@ func (s *Shodan) processPSB(psb string) string {
 	datastream.Get("amount", value)
 	lastAmount := 0
 	if value.Value != "" {
-		lastAmount = strconv.Atoi(value.Value)
+		lastAmount, _ = strconv.Atoi(value.Value.(string))
 	}
 	if lastAmount != amount {
 		diff := lastAmount - amount
-		storage.ReportEvent("amountDiff", diff)
+		storage.ReportEvent("amountDiff", fmt.Sprintf("%d", diff))
 		if diff > 0 {
 			s.Say("money income")
 		} else {
 			s.Say("money outcome")
 		}
 	}
-	datastream.SetValue("amount", amount)
+	datastream.SetValue("amount", fmt.Sprintf("%d", amount))
 	return fmt.Sprintf("Доступно: %d", amount)
 }
