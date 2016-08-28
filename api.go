@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"regexp"
 	"strings"
 
 	"github.com/spf13/viper"
@@ -57,12 +58,12 @@ func (s *Shodan) initAPI() {
 		}
 	})
 	http.HandleFunc("/psb", func(w http.ResponseWriter, r *http.Request) {
-		log.Println("psb report")
 		message, err := ioutil.ReadAll(r.Body)
 		if err != nil {
 			log.Println(err)
 		}
-		s.Say(string(message))
+		psb := string(message)
+		s.Say(s.processPSB(psb))
 		defer r.Body.Close()
 	})
 	http.HandleFunc("/codeship", func(w http.ResponseWriter, r *http.Request) {
@@ -120,4 +121,12 @@ type CodeshipHook struct {
 		StartedAt       string `json:"started_at"`
 		FinishedAt      string `json:"finished_at"`
 	} `json:"build"`
+}
+
+func (s *Shodan) processPSB(psb string) string {
+	re := regexp.MustCompile(`Доступно ([\d ]+).*`)
+	amountRaw := re.FindStringSubmatch(psb)[0]
+	amount, _ := iconv.Atoi(strings.TrimSpace(amountRaw))
+	storage.ReportEvent("amount", fmt.Sprintf("%s", amount))
+	return fmt.Sprintf("Доступно: %s", amount)
 }
