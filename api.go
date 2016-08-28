@@ -57,7 +57,11 @@ func (s *Shodan) initAPI() {
 		}
 	})
 	http.HandleFunc("/psb", func(w http.ResponseWriter, r *http.Request) {
-		message, _ := ioutil.ReadAll(r.Body)
+		log.Println("psb report")
+		message, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			log.Println(err)
+		}
 		s.Say(string(message))
 		defer r.Body.Close()
 	})
