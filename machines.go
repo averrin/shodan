@@ -160,7 +160,7 @@ func NewActivityMachine(state *ActivityState, shodan *Shodan) *transition.StateM
 		if personal.GetDaytime() == "night" {
 			go func() {
 				time.Sleep(5 * time.Minute)
-				if s.GetState() == "active" && !shodan.Flags["late night notify"] {
+				if personal.GetActivity(datastream) && !shodan.Flags["late night notify"] {
 					shodan.Say("activity at night")
 					storage.ReportEvent("nightActivity", "")
 					shodan.Flags["late night notify"] = true
