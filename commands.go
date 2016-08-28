@@ -118,6 +118,9 @@ func (s *Shodan) getCommands() Commands {
 					s.Say("command success")
 				} else {
 					s.Say("command fail")
+					if result.Result != nil {
+						s.Say(result.Result.(string))
+					}
 				}
 			},
 		},

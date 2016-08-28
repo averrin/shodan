@@ -260,6 +260,9 @@ func (s *Shodan) GideonNotify(msg string) {
 		log.Println("command success")
 	} else {
 		log.Println("command fail")
+		if result.Result != nil {
+			s.Say(result.Result.(string))
+		}
 	}
 }
 
@@ -271,6 +274,9 @@ func (s *Shodan) UpdateGideon() {
 		s.Say("command success")
 	} else {
 		s.Say("command fail")
+		if result.Result != nil {
+			s.Say(result.Result.(string))
+		}
 	}
 }
 
