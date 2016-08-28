@@ -139,12 +139,12 @@ func (s *Shodan) processPSB(psb string) string {
 		lastAmount, _ = strconv.Atoi(value.Value.(string))
 	}
 	if lastAmount != amount {
-		diff := lastAmount - amount
+		diff := amount - lastAmount
 		storage.ReportEvent("amountDiff", fmt.Sprintf("%d", diff))
 		if diff > 0 {
-			s.Say("money outcome")
-		} else {
 			s.Say("money income")
+		} else {
+			s.Say("money outcome")
 		}
 	}
 	datastream.SetValue("amount", fmt.Sprintf("%d", amount))
