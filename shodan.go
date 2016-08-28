@@ -133,6 +133,7 @@ func (s *Shodan) Serve() {
 				if n.Test() {
 					log.Println(n.Text)
 					s.Say(n.Text)
+					s.GideonNotify(s.GetString(n.Text))
 				}
 			}
 		}

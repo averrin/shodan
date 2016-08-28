@@ -4,6 +4,7 @@ import (
 	"time"
 
 	ds "github.com/averrin/shodan/modules/datastream"
+	p "github.com/averrin/shodan/modules/personal"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
 	"github.com/qor/transition"
@@ -190,22 +191,24 @@ func NewSleepMachine(state *SleepState, shodan *Shodan) *transition.StateMachine
 			time.Sleep(3 * time.Minute)
 			shodan.Say("good morning")
 		}()
-		s := state.(*SleepState)
-		go func() {
-			time.Sleep(30 * time.Minute)
-			if s.GetState() == "dream" {
-				shodan.Say("get up now")
-				go func() {
-					time.Sleep(3 * time.Minute)
-					if s.GetState() == "dream" {
-						shodan.Say("you were alerted")
-						datastream.SendCommand(ds.Command{
-							"sh:Спальня:On", nil, "gideon", "Shodan",
-						})
-					}
-				}()
-			}
-		}()
+		if personal.GetDay() == p.WORKDAY {
+			s := state.(*SleepState)
+			go func() {
+				time.Sleep(30 * time.Minute)
+				if s.GetState() == "dream" {
+					shodan.Say("get up now")
+					go func() {
+						time.Sleep(3 * time.Minute)
+						if s.GetState() == "dream" {
+							shodan.Say("you were alerted")
+							datastream.SendCommand(ds.Command{
+								"sh:Спальня:On", nil, "gideon", "Shodan",
+							})
+						}
+					}()
+				}
+			}()
+		}
 		return nil
 	})
 	wm.Event("sleep").To("sleep").From("awake")
