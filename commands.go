@@ -73,7 +73,6 @@ func (s *Shodan) getCommands() Commands {
 		{"time", 0,
 			func(args ...string) {
 				s.Say(fmt.Sprintf("%s (%s)", time.Now().Format("15:04"), personal.GetDaytime()))
-				s.Say(fmt.Sprintf("%s (%s)", time.Now().Weekday(), time.Now().Weekday() >= 6))
 			},
 		},
 		{"debug", 0,

@@ -206,6 +206,7 @@ func (ds *DataStream) SendCommand(cmd Command) Status {
 	channel := fmt.Sprintf("status:%s", cmd.Reciever)
 	pubsub, _ := client.Subscribe(channel)
 	out := make(chan Status)
+	defer close(out)
 	go func() {
 		defer pubsub.Close()
 		for {
@@ -219,6 +220,11 @@ func (ds *DataStream) SendCommand(cmd Command) Status {
 			out <- status
 			break
 		}
+	}()
+	go func() {
+		time.Sleep(5 * time.Minute)
+		out <- Status{}
+		pubsub.Close()
 	}()
 	client.Publish(fmt.Sprintf("commands:%s", cmd.Reciever), string(raw))
 	return <-out
