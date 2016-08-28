@@ -156,7 +156,7 @@ func NewActivityMachine(state *ActivityState, shodan *Shodan) *transition.StateM
 	wm := transition.New(state)
 	wm.Initial("idle")
 	wm.State("active").Enter(func(state interface{}, tx *gorm.DB) error {
-		s := state.(*ActivityState)
+		// s := state.(*ActivityState)
 		if personal.GetDaytime() == "night" {
 			go func() {
 				time.Sleep(5 * time.Minute)
