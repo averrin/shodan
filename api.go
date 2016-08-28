@@ -133,7 +133,7 @@ func (s *Shodan) processPSB(psb string) string {
 	log.Println(amount, err)
 	storage.ReportEvent("amount", fmt.Sprintf("%d", amount))
 	value := ds.Value{}
-	datastream.Get("amount", value)
+	datastream.Get("amount", &value)
 	lastAmount := 0
 	if value.Value != nil {
 		log.Println(value.Value.(string))
