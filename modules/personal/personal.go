@@ -56,7 +56,7 @@ func (Personal) GetDay() (day Day) {
 	now := time.Now()
 	d := now.Weekday()
 	day = WORKDAY
-	if d >= 6 {
+	if d == 6 || d == 0 {
 		day = WEEKEND
 	}
 	return day
