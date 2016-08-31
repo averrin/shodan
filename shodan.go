@@ -152,7 +152,7 @@ func (s *Shodan) Serve() {
 	go func(c chan wu.Weather) {
 		for {
 			c <- weather.GetWeather()
-			time.Sleep(8 * time.Minute)
+			time.Sleep(10 * time.Minute)
 		}
 	}(wchan)
 
