@@ -112,13 +112,11 @@ func (wu WUnderground) GetWeather() (w Weather) {
 	err = json.Unmarshal(body, &r)
 	if err != nil {
 		log.Print(string(body))
-		log.Fatal(err)
+		return w
 	}
-	// fmt.Printf("%v - %v", r.CurrentObservation.Icon, r.CurrentObservation.TempC)
 	w = r.CurrentObservation
 	if w.Weather == "" {
 		return wu.GetWeather()
 	}
-	// w.TempC = rand.Int()
 	return w
 }

@@ -3,7 +3,6 @@ package attendance
 import (
 	"encoding/json"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -81,12 +80,12 @@ func (att Attendance) getAttendanceJSON() (*gabs.Container, error) {
 	req.AddCookie(cookie)
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 	data, err := ioutil.ReadAll(resp.Body)
 	resp.Body.Close()
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 	return gabs.ParseJSON(data)
 }
