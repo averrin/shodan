@@ -142,8 +142,10 @@ func (s *Shodan) Serve() {
 	tchan := make(chan time.Duration)
 	go func(c chan time.Duration) {
 		for {
-			_, _, sinceDI, _, _ := attendance.GetAttendance().GetHomeTime()
-			c <- sinceDI
+			if s.LastPlace == "work" {
+				_, _, sinceDI, _, _ := attendance.GetAttendance().GetHomeTime()
+				c <- sinceDI	
+			}
 			time.Sleep(3 * time.Minute)
 		}
 	}(tchan)
