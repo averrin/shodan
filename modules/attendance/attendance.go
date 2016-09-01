@@ -52,7 +52,7 @@ func (att Attendance) parseAttendance(raw *gabs.Container) *Info {
 func (att Attendance) GetAttendance() *Info {
 	data, err := att.getAttendanceJSON()
 	if err != nil {
-		log.Fatal(err)
+		return new(Info)
 	}
 	return att.parseAttendance(data)
 }
