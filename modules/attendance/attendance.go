@@ -224,6 +224,9 @@ func (info *Info) GetHomeTime() (since time.Duration, exit time.Time, sinceIdeal
 			workDays++
 		}
 	}
+	if workDays == 0 {
+		workDays = 1
+	}
 
 	avg := info.GetAverage()
 	norm := (8*60 + 5) * workDays
