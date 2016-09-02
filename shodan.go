@@ -115,6 +115,9 @@ func (s *Shodan) GetString(name string) string {
 }
 
 func (s *Shodan) Say(name string) {
+	if name == "" {
+		return
+	}
 	if s.Strings[name] != nil {
 		telegram.Send(s.GetString(name))
 	} else {
@@ -144,7 +147,7 @@ func (s *Shodan) Serve() {
 		for {
 			if s.LastPlace == "work" {
 				_, _, sinceDI, _, _ := attendance.GetAttendance().GetHomeTime()
-				c <- sinceDI	
+				c <- sinceDI
 			}
 			time.Sleep(3 * time.Minute)
 		}
