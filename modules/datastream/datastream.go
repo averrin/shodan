@@ -110,20 +110,24 @@ type RoomTemp struct {
 	Timestamp time.Time
 }
 
-func (ds *DataStream) Get(key string, value interface{}) {
+func (ds *DataStream) Get(key string, value interface{}) error {
 	raw, err := client.Get(key).Bytes()
 	if err != nil {
-		log.Print(err)
+		log.Print("get ", key, err)
+		return err
 	}
 	json.Unmarshal(raw, value)
+	return nil
 }
 
-func (ds *DataStream) Set(key string, value interface{}) {
+func (ds *DataStream) Set(key string, value interface{}) error {
 	raw, _ := json.Marshal(value)
 	err := client.Set(key, raw, 0).Err()
 	if err != nil {
-		log.Println(err)
+		log.Println("set ", key, err)
+		return err
 	}
+	return nil
 }
 
 func (ds *DataStream) GetWhereIAm() (point Point) {
