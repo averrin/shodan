@@ -113,7 +113,7 @@ type RoomTemp struct {
 func (ds *DataStream) Get(key string, value interface{}) error {
 	raw, err := client.Get(key).Bytes()
 	if err != nil {
-		log.Print("get ", key, err)
+		// log.Print("get ", key, err)
 		return err
 	}
 	json.Unmarshal(raw, value)
