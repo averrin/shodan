@@ -53,7 +53,7 @@ func (stor *Storage) GetNotes() []Note {
 	if err != nil {
 		log.Println(err)
 	}
-	res.All(notes)
+	res.All(&notes)
 	return notes
 }
 
