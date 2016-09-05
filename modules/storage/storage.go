@@ -48,7 +48,7 @@ func (stor *Storage) ClearNotes() {
 func (stor *Storage) GetNotes() []Note {
 	creds := *stor
 	notes := []Note{}
-	res, err := r.DB(creds["database"]).Table("notes").Get(r.GetAllOpts{}).Run(conn)
+	res, err := r.DB(creds["database"]).Table("notes").Run(conn)
 	defer res.Close()
 	if err != nil {
 		log.Println(err)
