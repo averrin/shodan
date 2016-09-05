@@ -82,7 +82,7 @@ func (Personal) GetActivity(datastream *ds.DataStream) bool {
 	datastream.Get("display", &phone)
 	pc := ds.Value{}
 	datastream.Get("pc", &pc)
-	if phone.Value != nil && (phone.Value.(string) == "on" || pc.Value.(string) == "unidle") {
+	if phone.Value != nil && pc.Value != nil && (phone.Value.(string) == "on" || pc.Value.(string) == "unidle") {
 		return true
 	}
 	return false
