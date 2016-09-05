@@ -63,12 +63,9 @@ func (s *Shodan) getCommands() Commands {
 		},
 		{"imat", 1,
 			func(args ...string) {
-				log.Println(args[0])
+				log.Println("P:", args[0])
 				datastream.SetWhereIAm(args[0])
-				err := s.Machines["place"].Trigger(args[0], s.States["place"], s.DB)
-				if err != nil {
-					log.Println(err)
-				}
+				s.Machines["place"].Trigger(args[0], s.States["place"], s.DB)
 			},
 		},
 		{"time", 0,

@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"fmt"
 	"log"
 	"time"
 
@@ -92,4 +93,11 @@ type Event struct {
 	Event     string    `json:"Event"`
 	Note      string    `json:"Note"`
 	Timestamp time.Time `json:"Timestamp"`
+}
+
+func (e Event) String() string {
+	if e.Note == "" {
+		return fmt.Sprintf("E: %s", e.Event)
+	}
+	return fmt.Sprintf("E: %s [%s]", e.Event, e.Note)
 }

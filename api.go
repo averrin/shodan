@@ -70,7 +70,7 @@ func (s *Shodan) initAPI() {
 	})
 	http.HandleFunc("/codeship", func(w http.ResponseWriter, r *http.Request) {
 		message, _ := ioutil.ReadAll(r.Body)
-		// s.Say(string(message))
+		log.Println(string(message))
 		defer r.Body.Close()
 		hook := CodeshipHook{}
 		json.Unmarshal(message, &hook)
@@ -91,7 +91,7 @@ func (s *Shodan) initAPI() {
 		s.Say(fmt.Sprintf("alarm %s", sensor))
 	})
 	go func() {
-		log.Println("Start API")
+		log.Println("API: Starting")
 		log.Println(http.ListenAndServe(":"+viper.GetString("port"), nil))
 	}()
 }
@@ -101,6 +101,7 @@ func (s *Shodan) createHandler(route string, command string) func(http.ResponseW
 		tokens := strings.Split(r.URL.Path[len(route)+1:], "/")
 		cmd := s.getCommand(command)
 		if cmd.Cmd != "" {
+			log.Println(cmd)
 			cmd.Action(tokens...)
 		}
 	}

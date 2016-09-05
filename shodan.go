@@ -187,7 +187,7 @@ func (s *Shodan) Serve() {
 	for {
 		select {
 		case m := <-ichan:
-			log.Println(m)
+			log.Println("M:", m)
 			s.dispatchMessages(m)
 		case t := <-tchan:
 			dt := personal.GetDaytime()

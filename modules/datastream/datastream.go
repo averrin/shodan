@@ -33,7 +33,11 @@ func (ds *DataStream) NewRedis() {
 	})
 
 	pong, err := client.Ping().Result()
-	fmt.Println(pong, err)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	log.Println("Redis:", pong)
 }
 
 func (ds *DataStream) Heartbeat(key string) {
