@@ -39,7 +39,7 @@ func (stor *Storage) NewDB() (err error) {
 
 func (stor *Storage) ClearNotes() {
 	creds := *stor
-	_, err := r.DB(creds["notes"]).Table("notes").Delete(r.DeleteOpts{}).Run(conn)
+	_, err := r.DB(creds["database"]).Table("notes").Delete(r.DeleteOpts{}).Run(conn)
 	if err != nil {
 		log.Println(err)
 	}
@@ -48,7 +48,7 @@ func (stor *Storage) ClearNotes() {
 func (stor *Storage) GetNotes() []Note {
 	creds := *stor
 	notes := []Note{}
-	res, err := r.DB(creds["notes"]).Table("notes").Get(r.GetAllOpts{}).Run(conn)
+	res, err := r.DB(creds["database"]).Table("notes").Get(r.GetAllOpts{}).Run(conn)
 	defer res.Close()
 	if err != nil {
 		log.Println(err)
