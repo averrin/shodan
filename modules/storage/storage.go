@@ -1,19 +1,17 @@
 package storage
 
 import (
-	"fmt"
 	"log"
-	"strconv"
 	"time"
 
-	couchdb "github.com/rhinoman/couchdb-go"
-	uuid "github.com/satori/go.uuid"
+	// couchdb "github.com/rhinoman/couchdb-go"
+
+	r "gopkg.in/dancannon/gorethink.v2"
 )
 
 type Storage map[string]string
 
-var notes *couchdb.Database
-var events *couchdb.Database
+var conn *r.Session
 
 func Connect(creds map[string]string) *Storage {
 	stor := Storage{}
@@ -24,70 +22,62 @@ func Connect(creds map[string]string) *Storage {
 	return &stor
 }
 
-func (stor *Storage) NewDB() {
+func (stor *Storage) NewDB() (err error) {
 	creds := *stor
-	port, _ := strconv.Atoi(creds["port"])
-	timeout := time.Duration(3 * time.Second)
-	conn, err := couchdb.NewConnection(creds["host"], port, timeout)
+	conn, err = r.Connect(r.ConnectOpts{
+		Address:  creds["host"],
+		Database: creds["database"],
+		Username: creds["user"],
+		Password: creds["password"],
+	})
 	if err != nil {
 		log.Println(err)
+		return err
 	}
-	auth := couchdb.BasicAuth{Username: creds["user"], Password: creds["password"]}
-	events = conn.SelectDB("events", &auth)
-	notes = conn.SelectDB("notes", &auth)
-	if notes != nil {
-		log.Println("Storage connected")
-	}
-	ddoc := DesignDocument{
-		Language: "javascript",
-		Views:    getNotesViews(),
-	}
-	notes.SaveDesignDoc("notes", ddoc, "")
+	return nil
 }
 
 func (stor *Storage) ClearNotes() {
-	results := ViewResult{}
-	err := notes.GetView("notes", "list", &results, nil)
+	creds := *stor
+	_, err := r.DB(creds["notes"]).Table("notes").Delete(r.DeleteOpts{}).Run(conn)
 	if err != nil {
 		log.Println(err)
-	}
-	for _, n := range results.Rows {
-		log.Println(notes.Delete(n.Key[0], n.Key[1]))
 	}
 }
 
 func (stor *Storage) GetNotes() []Note {
-	results := ViewResult{}
-	err := notes.GetView("notes", "list", &results, nil)
+	creds := *stor
+	notes := []Note{}
+	res, err := r.DB(creds["notes"]).Table("notes").Get(r.GetAllOpts{}).Run(conn)
+	defer res.Close()
 	if err != nil {
 		log.Println(err)
 	}
-	r := []Note{}
-	for _, n := range results.Rows {
-		r = append(r, n.Value)
-	}
-	return r
+	res.All(notes)
+	return notes
 }
 
 func (stor *Storage) SaveNote(text string) {
+	creds := *stor
 	note := Note{
 		Text:      text,
 		Timestamp: time.Now(),
 	}
-	_, err := notes.Save(note, fmt.Sprintf("%s", uuid.NewV4()), "")
+	_, err := r.DB(creds["database"]).Table("notes").Insert(note).Run(conn)
 	if err != nil {
 		log.Println(err)
 	}
 }
 
 func (stor *Storage) ReportEvent(event string, note string) {
+	creds := *stor
 	e := Event{
 		Event:     event,
 		Note:      note,
 		Timestamp: time.Now(),
 	}
 	log.Println(e)
-	_, err := events.Save(e, fmt.Sprintf("%s", uuid.NewV4()), "")
+	_, err := r.DB(creds["database"]).Table("events").Insert(e).Run(conn)
 	if err != nil {
 		log.Println(err)
 	}
@@ -102,34 +92,4 @@ type Event struct {
 	Event     string    `json:"Event"`
 	Note      string    `json:"Note"`
 	Timestamp time.Time `json:"Timestamp"`
-}
-
-func getNotesViews() map[string]View {
-	return map[string]View{
-		"list": {
-			Map: `function(doc){
-				emit([doc._id, doc._rev], doc);
-			}`,
-		},
-	}
-}
-
-type DesignDocument struct {
-	Language string          `json:"language"`
-	Views    map[string]View `json:"views"`
-}
-
-type View struct {
-	Map    string `json:"map"`
-	Reduce string `json:"reduce,omitempty"`
-}
-
-type ViewResult struct {
-	TotalRows int `json:"total_rows"`
-	Offset    int `json:"offset"`
-	Rows      []struct {
-		ID    string   `json:"id"`
-		Key   []string `json:"key"`
-		Value Note     `json:"value"`
-	} `json:"rows"`
 }

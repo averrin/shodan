@@ -130,9 +130,9 @@ func (s *Shodan) Serve() {
 	notifications := s.getNotifications()
 	go func() {
 		for _ = range ticker.C {
-			log.Println("Start testing notifications")
+			// log.Println("Start testing notifications")
 			for _, n := range notifications {
-				log.Println(fmt.Sprintf("Test %v", n))
+				// log.Println(fmt.Sprintf("Test %v", n))
 				if n.Test() {
 					log.Println(n.Text)
 					s.Say(n.Text)
@@ -219,7 +219,6 @@ func (s *Shodan) Serve() {
 				event = "to_bad"
 			}
 			err := s.Machines["weather"].Trigger(event, s.States["weather"], s.DB)
-			log.Println(err)
 			if err == nil {
 				s.Say(fmt.Sprintf("%s - %v°", w.Weather, w.TempC))
 			}
