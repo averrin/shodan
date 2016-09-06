@@ -6,6 +6,8 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+
+	"github.com/fatih/color"
 )
 
 const wuURL = "http://api.wunderground.com/api/%s/conditions/q/%s.json"
@@ -101,12 +103,13 @@ func Connect(creds map[string]string) WUnderground {
 }
 
 func (wu WUnderground) GetWeather() (w Weather) {
+	red := color.New(color.FgRed).SprintFunc()
 	url := fmt.Sprintf(wuURL, wu["apiKey"], wu["location"])
 	response, err := http.Get(url)
 	defer response.Body.Close()
 	if err != nil || response.StatusCode != 200 {
 		b, _ := ioutil.ReadAll(response.Body)
-		log.Println("Weather error", response.StatusCode, string(b))
+		log.Println(red("Weather error"), response.StatusCode, string(b))
 		return w
 	}
 
@@ -115,12 +118,13 @@ func (wu WUnderground) GetWeather() (w Weather) {
 	body, _ := ioutil.ReadAll(response.Body)
 	err = json.Unmarshal(body, &r)
 	if err != nil || r.Error.Type != "" {
+		log.Println(red("Weather error"))
 		log.Println(string(body))
 		return w
 	}
 	w = r.CurrentObservation
-	if w.Weather == "" {
-		return wu.GetWeather()
-	}
+	// if w.Weather == "" {
+	// 	return wu.GetWeather()
+	// }
 	return w
 }

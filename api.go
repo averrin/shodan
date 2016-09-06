@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	ds "github.com/averrin/shodan/modules/datastream"
+	"github.com/fatih/color"
 	"github.com/spf13/viper"
 )
 
@@ -84,7 +85,8 @@ func (s *Shodan) initAPI() {
 		s.Say(fmt.Sprintf("alarm %s", sensor))
 	})
 	go func() {
-		log.Println("API: Starting")
+		blue := color.New(color.FgBlue).SprintFunc()
+		log.Println(blue("API:") + " Starting")
 		log.Println(http.ListenAndServe(":"+viper.GetString("port"), nil))
 	}()
 }

@@ -122,8 +122,9 @@ type Event struct {
 
 func (e Event) String() string {
 	yellow := color.New(color.FgYellow).SprintFunc()
+	green := color.New(color.FgGreen).SprintFunc()
 	if e.Note == "" {
 		return fmt.Sprintf("%s %s", yellow("E:"), e.Event)
 	}
-	return fmt.Sprintf("%s %s [%s]", yellow("E:"), e.Event, e.Note)
+	return fmt.Sprintf("%s %s [%s]", yellow("E:"), e.Event, green(e.Note))
 }
