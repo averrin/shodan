@@ -10,8 +10,6 @@ import (
 	p "github.com/averrin/shodan/modules/personal"
 	// pb "github.com/averrin/shodan/modules/pushbullet"
 	ds "github.com/averrin/shodan/modules/datastream"
-	// eg "github.com/averrin/shodan/modules/eventghost"
-	// sh "github.com/averrin/shodan/modules/smarthome"
 	stor "github.com/averrin/shodan/modules/storage"
 	tg "github.com/averrin/shodan/modules/telegram"
 	wu "github.com/averrin/shodan/modules/weather"

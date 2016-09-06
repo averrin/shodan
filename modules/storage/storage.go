@@ -38,6 +38,29 @@ func (stor *Storage) NewDB() (err error) {
 	return nil
 }
 
+type Change struct {
+	NewVal Event `gorethink:"new_val"`
+}
+
+func (stor *Storage) GetEventsStream() chan Event {
+	creds := *stor
+	c := make(chan Event)
+	res, err := r.DB(creds["database"]).Table("events").Changes(r.ChangesOpts{
+	// IncludeInitial: true,
+	}).Run(conn)
+	if err != nil {
+		log.Println(err)
+	}
+	go func() {
+		ch := Change{}
+		for res.Next(&ch) {
+			c <- ch.NewVal
+		}
+		res.Close()
+	}()
+	return c
+}
+
 func (stor *Storage) ClearNotes() {
 	creds := *stor
 	_, err := r.DB(creds["database"]).Table("notes").Delete(r.DeleteOpts{}).Run(conn)
