@@ -160,7 +160,6 @@ func (s *Shodan) getCommands() Commands {
 				pc := args[0]
 				datastream.SetValue("pc", pc)
 				storage.ReportEvent("pcActivity", pc)
-				var err error
 				if personal.GetActivity(datastream) {
 					if s.States["place"].GetState() != "home" && !s.Flags["pc activity notify"] {
 						s.Say("pc without master")
@@ -171,12 +170,9 @@ func (s *Shodan) getCommands() Commands {
 							s.Flags["pc activity notify"] = false
 						}()
 					}
-					err = s.Machines["activity"].Trigger("active", s.States["activity"], s.DB)
+					s.Machines["activity"].Trigger("active", s.States["activity"], s.DB)
 				} else {
-					err = s.Machines["activity"].Trigger("idle", s.States["activity"], s.DB)
-				}
-				if err != nil {
-					log.Println(err)
+					s.Machines["activity"].Trigger("idle", s.States["activity"], s.DB)
 				}
 			},
 		},
@@ -185,14 +181,10 @@ func (s *Shodan) getCommands() Commands {
 				display := args[0]
 				datastream.SetValue("display", display)
 				storage.ReportEvent("displayActivity", display)
-				var err error
 				if personal.GetActivity(datastream) {
-					err = s.Machines["activity"].Trigger("active", s.States["activity"], s.DB)
+					s.Machines["activity"].Trigger("active", s.States["activity"], s.DB)
 				} else {
-					err = s.Machines["activity"].Trigger("idle", s.States["activity"], s.DB)
-				}
-				if err != nil {
-					log.Println(err)
+					s.Machines["activity"].Trigger("idle", s.States["activity"], s.DB)
 				}
 			},
 		},

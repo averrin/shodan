@@ -42,21 +42,14 @@ func (s *Shodan) initAPI() {
 	http.HandleFunc("/dream/", func(w http.ResponseWriter, r *http.Request) {
 		status := r.URL.Path[len("/dream/"):]
 		datastream.SetValue("dream", status)
-		err := s.Machines["sleep"].Trigger(status, s.States["sleep"], s.DB)
-		if err != nil {
-			log.Println(status)
-			log.Println(err)
-		}
+		s.Machines["sleep"].Trigger(status, s.States["sleep"], s.DB)
 		storage.ReportEvent(status, "")
 	})
 	http.HandleFunc("/power/", func(w http.ResponseWriter, r *http.Request) {
 		status := strings.TrimSpace(r.URL.Path[len("/power/"):])
 		storage.ReportEvent("power", status)
 		if s.States["sleep"].GetState() != "awake" {
-			err := s.Machines["sleep"].Trigger("awake", s.States["sleep"], s.DB)
-			if err != nil {
-				log.Println(err)
-			}
+			s.Machines["sleep"].Trigger("awake", s.States["sleep"], s.DB)
 		}
 	})
 	http.HandleFunc("/psb", func(w http.ResponseWriter, r *http.Request) {
@@ -101,7 +94,6 @@ func (s *Shodan) createHandler(route string, command string) func(http.ResponseW
 		tokens := strings.Split(r.URL.Path[len(route)+1:], "/")
 		cmd := s.getCommand(command)
 		if cmd.Cmd != "" {
-			log.Println(cmd)
 			cmd.Action(tokens...)
 		}
 	}
