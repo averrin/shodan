@@ -155,7 +155,12 @@ func (s *Shodan) Serve() {
 	wchan := make(chan wu.Weather)
 	go func(c chan wu.Weather) {
 		for {
-			c <- weather.GetWeather()
+			w, err := weather.GetWeather()
+			if err != nil {
+				time.Sleep(10 * time.Minute)
+				continue
+			}
+			c <- w
 			time.Sleep(10 * time.Minute)
 		}
 	}(wchan)

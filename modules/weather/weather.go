@@ -2,6 +2,7 @@ package weather
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -89,7 +90,7 @@ type WeatherResponse struct {
 	Error struct {
 		Type        string `json:"type"`
 		Description string `json:"description"`
-	} `json:"error,omitempty"`
+	} `json:"error"`
 }
 
 type WUnderground map[string]string
@@ -102,29 +103,33 @@ func Connect(creds map[string]string) WUnderground {
 	return wu
 }
 
-func (wu WUnderground) GetWeather() (w Weather) {
+func (wu WUnderground) GetWeather() (w Weather, err error) {
+	// log.Println("Start getting weather")
 	red := color.New(color.FgRed).SprintFunc()
 	url := fmt.Sprintf(wuURL, wu["apiKey"], wu["location"])
 	response, err := http.Get(url)
 	defer response.Body.Close()
 	if err != nil || response.StatusCode != 200 {
+		log.Println(red("Weather error"), response.StatusCode)
 		b, _ := ioutil.ReadAll(response.Body)
-		log.Println(red("Weather error"), response.StatusCode, string(b))
-		return w
+		log.Println(string(b))
+		return w, err
 	}
 
 	defer response.Body.Close()
 	var r WeatherResponse
 	body, _ := ioutil.ReadAll(response.Body)
 	err = json.Unmarshal(body, &r)
+	// log.Println(r.Error)
 	if err != nil || r.Error.Type != "" {
 		log.Println(red("Weather error"))
 		log.Println(string(body))
-		return w
+		return w, err
 	}
 	w = r.CurrentObservation
-	// if w.Weather == "" {
-	// 	return wu.GetWeather()
-	// }
-	return w
+	if w.Weather == "" {
+		log.Println(red("Weather error"))
+		return w, errors.New("No weather")
+	}
+	return w, nil
 }

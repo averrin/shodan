@@ -88,6 +88,7 @@ func (s *Shodan) initAPI() {
 		blue := color.New(color.FgBlue).SprintFunc()
 		log.Println(blue("API:") + " Starting")
 		log.Println(http.ListenAndServe(":"+viper.GetString("port"), nil))
+		log.Println(blue("API:") + " Stopped")
 	}()
 }
 

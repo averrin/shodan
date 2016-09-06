@@ -81,8 +81,8 @@ func (s *Shodan) getCommands() Commands {
 		},
 		{"w", 0,
 			func(args ...string) {
-				w := weather.GetWeather()
-				if w.Weather == "" {
+				w, err := weather.GetWeather()
+				if err != nil || w.Weather == "" {
 					s.Say("no weather")
 					return
 				}
