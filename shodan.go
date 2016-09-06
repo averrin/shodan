@@ -8,6 +8,7 @@ import (
 
 	at "github.com/averrin/shodan/modules/attendance"
 	p "github.com/averrin/shodan/modules/personal"
+	"github.com/fatih/color"
 	// pb "github.com/averrin/shodan/modules/pushbullet"
 	ds "github.com/averrin/shodan/modules/datastream"
 	stor "github.com/averrin/shodan/modules/storage"
@@ -185,7 +186,8 @@ func (s *Shodan) Serve() {
 	for {
 		select {
 		case m := <-ichan:
-			log.Println("M:", m)
+			blue := color.New(color.FgBlue).SprintFunc()
+			log.Println(blue("M:"), m)
 			s.dispatchMessages(m)
 		case t := <-tchan:
 			dt := personal.GetDaytime()
@@ -209,6 +211,10 @@ func (s *Shodan) Serve() {
 				}()
 			}
 		case w := <-wchan:
+			if w.Weather == "" {
+				s.Say("no weather")
+				return
+			}
 			ws := personal.GetWeatherIsOk(w)
 			var event string
 			if ws {

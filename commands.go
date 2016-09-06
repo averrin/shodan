@@ -82,6 +82,10 @@ func (s *Shodan) getCommands() Commands {
 		{"w", 0,
 			func(args ...string) {
 				w := weather.GetWeather()
+				if w.Weather == "" {
+					s.Say("no weather")
+					return
+				}
 				s.Say(fmt.Sprintf("%s - %v°", w.Weather, w.TempC))
 			},
 		},

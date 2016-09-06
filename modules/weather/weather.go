@@ -84,6 +84,10 @@ type WeatherResponse struct {
 		TermsofService string `json:"termsofService"`
 		Version        string `json:"version"`
 	} `json:"response"`
+	Error struct {
+		Type        string `json:"type"`
+		Description string `json:"description"`
+	} `json:"error,omitempty"`
 }
 
 type WUnderground map[string]string
@@ -110,8 +114,8 @@ func (wu WUnderground) GetWeather() (w Weather) {
 	var r WeatherResponse
 	body, _ := ioutil.ReadAll(response.Body)
 	err = json.Unmarshal(body, &r)
-	if err != nil {
-		log.Print(string(body))
+	if err != nil || r.Error.Type != "" {
+		log.Println(string(body))
 		return w
 	}
 	w = r.CurrentObservation

@@ -5,6 +5,8 @@ import (
 	"log"
 	"time"
 
+	"github.com/fatih/color"
+
 	// couchdb "github.com/rhinoman/couchdb-go"
 
 	r "gopkg.in/dancannon/gorethink.v2"
@@ -119,8 +121,9 @@ type Event struct {
 }
 
 func (e Event) String() string {
+	yellow := color.New(color.FgYellow).SprintFunc()
 	if e.Note == "" {
-		return fmt.Sprintf("E: %s", e.Event)
+		return fmt.Sprintf("%s %s", yellow("E:"), e.Event)
 	}
-	return fmt.Sprintf("E: %s [%s]", e.Event, e.Note)
+	return fmt.Sprintf("%s %s [%s]", yellow("E:"), e.Event, e.Note)
 }

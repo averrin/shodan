@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/fatih/color"
+
 	redis "gopkg.in/redis.v4"
 )
 
@@ -37,7 +39,8 @@ func (ds *DataStream) NewRedis() {
 		log.Println(err)
 		return
 	}
-	log.Println("Redis:", pong)
+	red := color.New(color.FgRed).SprintFunc()
+	log.Println(red("Redis:"), pong)
 }
 
 func (ds *DataStream) Heartbeat(key string) {
