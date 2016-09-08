@@ -25,6 +25,10 @@ func Connect(creds map[string]string) *Storage {
 	return &stor
 }
 
+func (stor *Storage) GetSession() *r.Session {
+	return conn
+}
+
 func (stor *Storage) NewDB() (err error) {
 	creds := *stor
 	conn, err = r.Connect(r.ConnectOpts{
