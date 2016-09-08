@@ -196,9 +196,9 @@ func (s *Shodan) getCommands() Commands {
 			func(args ...string) {
 				switch {
 				case args[0] == "renew":
-					s.Say(auth.RenewToken())
+					s.SayOffRecord(auth.RenewToken())
 				case args[0] == "get":
-					s.Say(auth.GetToken())
+					s.SayOffRecord(auth.GetToken())
 				}
 			},
 		},

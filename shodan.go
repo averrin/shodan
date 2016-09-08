@@ -130,6 +130,20 @@ func (s *Shodan) Say(name string) {
 	}
 }
 
+func (s *Shodan) SayOffRecord(name string) {
+	if name == "" {
+		return
+	}
+	if s.Strings[name] != nil {
+		m := s.GetString(name)
+		telegram.Send(m)
+		storage.ReportEvent("say", m)
+	} else {
+		telegram.Send(name)
+		storage.ReportEvent("sayDirect", name)
+	}
+}
+
 func (s *Shodan) Serve() {
 	ticker := time.NewTicker(1 * time.Hour)
 	notifications := s.getNotifications()
