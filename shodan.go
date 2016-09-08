@@ -121,9 +121,12 @@ func (s *Shodan) Say(name string) {
 		return
 	}
 	if s.Strings[name] != nil {
-		telegram.Send(s.GetString(name))
+		m := s.GetString(name)
+		telegram.Send(m)
+		storage.ReportEvent("say", m)
 	} else {
 		telegram.Send(name)
+		storage.ReportEvent("sayDirect", name)
 	}
 }
 
