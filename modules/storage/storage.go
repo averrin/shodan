@@ -6,9 +6,6 @@ import (
 	"time"
 
 	"github.com/fatih/color"
-
-	// couchdb "github.com/rhinoman/couchdb-go"
-
 	r "gopkg.in/dancannon/gorethink.v2"
 )
 
@@ -27,6 +24,16 @@ func Connect(creds map[string]string) *Storage {
 
 func (stor *Storage) GetSession() *r.Session {
 	return conn
+}
+
+func (stor *Storage) Exec(q r.Term, result interface{}) interface{} {
+	res, err := q.Run(conn)
+	defer res.Close()
+	if err != nil {
+		log.Println(err)
+	}
+	res.All(result)
+	return result
 }
 
 func (stor *Storage) NewDB() (err error) {
@@ -119,9 +126,11 @@ type Note struct {
 }
 
 type Event struct {
-	Event     string    `json:"Event"`
-	Note      string    `json:"Note"`
-	Timestamp time.Time `json:"Timestamp"`
+	Event     string      `json:"Event"`
+	Note      string      `json:"Note"`
+	Tag       string      `json:"Tag"`
+	Payload   interface{} `json:"Payload"`
+	Timestamp time.Time   `json:"Timestamp"`
 }
 
 func (e Event) String() string {
