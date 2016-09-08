@@ -10,6 +10,7 @@ import (
 	p "github.com/averrin/shodan/modules/personal"
 	"github.com/fatih/color"
 	// pb "github.com/averrin/shodan/modules/pushbullet"
+	a "github.com/averrin/shodan/modules/auth"
 	ds "github.com/averrin/shodan/modules/datastream"
 	stor "github.com/averrin/shodan/modules/storage"
 	tg "github.com/averrin/shodan/modules/telegram"
@@ -27,6 +28,7 @@ var datastream *ds.DataStream
 var storage *stor.Storage
 var personal p.Personal
 var attendance at.Attendance
+var auth *a.Auth
 var nobot *bool
 
 // var eventghost *eg.EventGhost
@@ -74,6 +76,7 @@ func NewShodan() *Shodan {
 	personal = p.Connect(viper.Get("personal"))
 	// pushbullet = pb.Connect(viper.GetStringMapString("pushbullet"))
 	datastream = ds.Connect(viper.GetStringMapString("datastream"))
+	auth = a.Connect(datastream)
 	storage = stor.Connect(viper.GetStringMapString("storage"))
 	attendance = at.Connect(viper.GetStringMapString("attendance"))
 	if !*nobot {
