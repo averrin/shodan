@@ -248,7 +248,9 @@ func (s *Shodan) Serve() {
 			}
 			err := s.Machines["weather"].Trigger(event, s.States["weather"], s.DB)
 			if err == nil {
-				s.Say(fmt.Sprintf("%s - %v°", w.Weather, w.TempC))
+				wea := fmt.Sprintf("%s - %v°", w.Weather, w.TempC)
+				s.Say(wea)
+				datastream.SetValue("weather", wea)
 			}
 		case p := <-pchan:
 			err := s.Machines["place"].Trigger(p.Name, s.States["place"], s.DB)
