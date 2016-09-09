@@ -130,13 +130,13 @@ func (s *Shodan) getCommands() Commands {
 		{"status", 0,
 			func(args ...string) {
 				for k, v := range s.States {
-					s.Say(fmt.Sprintf("%s: %s", k, v.GetState()))
+					s.SayOffRecord(fmt.Sprintf("%s: %s", k, v.GetState()))
 				}
 				for k, v := range s.Flags {
-					s.Say(fmt.Sprintf("%s: %v", k, v))
+					s.SayOffRecord(fmt.Sprintf("%s: %v", k, v))
 				}
 				for k, v := range s.LastTimes {
-					s.Say(fmt.Sprintf("%s: %s", k, v))
+					s.SayOffRecord(fmt.Sprintf("%s: %s", k, v))
 				}
 			},
 		},

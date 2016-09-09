@@ -137,10 +137,8 @@ func (s *Shodan) SayOffRecord(name string) {
 	if s.Strings[name] != nil {
 		m := s.GetString(name)
 		telegram.Send(m)
-		storage.ReportEvent("say", m)
 	} else {
 		telegram.Send(name)
-		storage.ReportEvent("sayDirect", name)
 	}
 }
 
@@ -241,6 +239,7 @@ func (s *Shodan) Serve() {
 				return
 			}
 			ws := personal.GetWeatherIsOk(w)
+			datastream.SetValue("weatherisok", fmt.Sprintf("%s", ws))
 			var event string
 			if ws {
 				event = "to_good"
