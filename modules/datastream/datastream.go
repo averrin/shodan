@@ -155,7 +155,7 @@ func (ds *DataStream) SetWhereIAm(place string) {
 	ds.Set("whereiam", point)
 }
 
-func (ds *DataStream) SetValue(key string, value string) {
+func (ds *DataStream) SetValue(key string, value interface{}) {
 	v := Value{
 		Value:     value,
 		Timestamp: time.Now(),
@@ -210,6 +210,11 @@ func (ds *DataStream) GetCommands(key string) (out chan Command) {
 		}
 	}()
 	return out
+}
+
+func (ds *DataStream) SendCommandAsync(cmd Command) {
+	raw, _ := json.Marshal(cmd)
+	client.Publish(fmt.Sprintf("commands:%s", cmd.Reciever), string(raw))
 }
 
 func (ds *DataStream) SendCommand(cmd Command) Status {

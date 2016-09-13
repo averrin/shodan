@@ -100,13 +100,18 @@ func Connect(creds map[string]string) WUnderground {
 	for k, v := range creds {
 		wu[k] = v
 	}
+	wu.SetLocation("location")
 	return wu
+}
+
+func (wu WUnderground) SetLocation(key string) {
+	wu["current_location"] = wu[key]
 }
 
 func (wu WUnderground) GetWeather() (w Weather, err error) {
 	// log.Println("Start getting weather")
 	red := color.New(color.FgRed).SprintFunc()
-	url := fmt.Sprintf(wuURL, wu["apiKey"], wu["location"])
+	url := fmt.Sprintf(wuURL, wu["apiKey"], wu["current_location"])
 	response, err := http.Get(url)
 	defer response.Body.Close()
 	if err != nil || response.StatusCode != 200 {

@@ -55,20 +55,21 @@ func NewPlaceMachine(state *PlaceState, shodan *Shodan) *transition.StateMachine
 	m.State("village")
 	m.State("pavel")
 	m.State("home").Enter(func(state interface{}, tx *gorm.DB) error {
+		weather.SetLocation("location")
 		s := state.(*PlaceState)
 		if time.Now().Sub(shodan.LastTimes["start"]).Minutes() > 15 {
 			shodan.Say("at home")
 		}
 		if time.Now().Sub(shodan.LastTimes["home leave"]).Minutes() > 15 {
 			shodan.LastTimes["home leave"] = time.Time{}
-			datastream.SendCommand(ds.Command{
+			datastream.SendCommandAsync(ds.Command{
+				"sh:Alarm:Unlock", nil, "gideon", "Shodan",
+			})
+			datastream.SendCommandAsync(ds.Command{
 				"sh:Прихожая 1:On", nil, "gideon", "Shodan",
 			})
-			datastream.SendCommand(ds.Command{
+			datastream.SendCommandAsync(ds.Command{
 				"sh:Прихожая 2:On", nil, "gideon", "Shodan",
-			})
-			datastream.SendCommand(ds.Command{
-				"sh:Alarm:Unlock", nil, "gideon", "Shodan",
 			})
 		}
 		pcStatus := ds.Value{}
@@ -84,12 +85,19 @@ func NewPlaceMachine(state *PlaceState, shodan *Shodan) *transition.StateMachine
 		}
 		return nil
 	}).Exit(func(state interface{}, tx *gorm.DB) error {
+		weather.SetLocation("alt_location")
 		s := state.(*PlaceState)
 		shodan.LastTimes["home leave"] = time.Now()
 		go func() {
 			time.Sleep(5 * time.Minute)
 			if s.GetState() != "home" {
-				datastream.SendCommand(ds.Command{
+				datastream.SendCommandAsync(ds.Command{
+					"sh:Прихожая 1:Off", nil, "gideon", "Shodan",
+				})
+				datastream.SendCommandAsync(ds.Command{
+					"sh:Прихожая 2:Off", nil, "gideon", "Shodan",
+				})
+				datastream.SendCommandAsync(ds.Command{
 					"sh:Alarm:Lock", nil, "gideon", "Shodan",
 				})
 			}

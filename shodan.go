@@ -240,6 +240,8 @@ func (s *Shodan) Serve() {
 			}
 			ws := personal.GetWeatherIsOk(w)
 			datastream.SetValue("weatherisok", fmt.Sprintf("%s", ws))
+			datastream.SetValue("weather", w)
+			datastream.SetValue("weatherLocation", weather["current_location"])
 			var event string
 			if ws {
 				event = "to_good"
@@ -250,7 +252,6 @@ func (s *Shodan) Serve() {
 			if err == nil {
 				wea := fmt.Sprintf("%s - %v°", w.Weather, w.TempC)
 				s.Say(wea)
-				datastream.SetValue("weather", wea)
 			}
 		case p := <-pchan:
 			err := s.Machines["place"].Trigger(p.Name, s.States["place"], s.DB)
