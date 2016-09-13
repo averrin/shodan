@@ -163,15 +163,9 @@ func (s *Shodan) Serve() {
 	go func(c chan time.Duration) {
 		for {
 			if s.LastPlace == "work" {
-				since, exit, sinceDI, exitIdeal, ifNow := attendance.GetAttendance().GetHomeTime()
-				datastream.SetValue("attendance", struct {
-					Since      time.Duration
-					Exit       time.Time
-					SinceIdeal time.Duration
-					ExitIdeal  time.Time
-					IfNow      time.Time
-				}{since, exit, sinceDI, exitIdeal, ifNow})
-				c <- sinceDI
+				ht := attendance.GetAttendance().GetHomeTime()
+				datastream.SetValue("attendance", ht)
+				c <- ht.SinceIdeal
 			}
 			time.Sleep(3 * time.Minute)
 		}
@@ -226,9 +220,9 @@ func (s *Shodan) Serve() {
 			if t.Minutes() < 1 && s.LastPlace == WORK && s.Flags["late at work"] != true && time.Now().Hour() > 12 {
 				go func() {
 					time.Sleep(10 * time.Minute)
-					_, _, sinceDI, _, _ := attendance.GetAttendance().GetHomeTime()
+					ht := attendance.GetAttendance().GetHomeTime()
 					if s.LastPlace == WORK {
-						if dt != "evening" && sinceDI.Minutes() < 1 {
+						if dt != "evening" && ht.SinceIdeal.Minutes() < 1 {
 							s.Say("attendance glitch")
 							s.Say(fmt.Sprintf("Debug: %v", t))
 							storage.ReportEvent("attendanceGlitch", "")

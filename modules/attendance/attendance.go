@@ -207,12 +207,21 @@ func (info *Info) GetAverage() []int {
 	return avg
 }
 
-func (info *Info) GetHomeTime() (since time.Duration, exit time.Time, sinceIdeal time.Duration, exitIdeal time.Time, ifNow time.Time) {
+type HomeTime struct {
+	Since          time.Duration
+	Exit           time.Time
+	SinceIdeal     time.Duration
+	ExitIdeal      time.Time
+	IfNow          time.Time
+	CurrentAverage time.Time
+}
+
+func (info *Info) GetHomeTime() HomeTime {
 	now := time.Now().Local()
 	today := info.Days[now.Day()]
 	// exit = today.Enter.Add(8 * time.Hour)
-	exit = time.Date(now.Year(), now.Month(), now.Day(), today.Enter.Hour()+8, today.Enter.Minute(), 0, 0, time.Local)
-	since = exit.Sub(now)
+	exit := time.Date(now.Year(), now.Month(), now.Day(), today.Enter.Hour()+8, today.Enter.Minute(), 0, 0, time.Local)
+	since := exit.Sub(now)
 
 	workDays := 0
 	n := time.Time{}
@@ -234,9 +243,10 @@ func (info *Info) GetHomeTime() (since time.Duration, exit time.Time, sinceIdeal
 	current := avgT * (workDays - 1)
 	offset := norm - current
 	ideal := []int{offset / 60, offset % 60}
-	exitIdeal = time.Date(now.Year(), now.Month(), now.Day(), today.Enter.Hour()+ideal[0], today.Enter.Minute()+ideal[1], 0, 0, time.Local)
-	sinceIdeal = exitIdeal.Sub(now)
+	exitIdeal := time.Date(now.Year(), now.Month(), now.Day(), today.Enter.Hour()+ideal[0], today.Enter.Minute()+ideal[1], 0, 0, time.Local)
+	sinceIdeal := exitIdeal.Sub(now)
 	currAvg := (avgT*workDays - int(since.Minutes())) / workDays
-	ifNow = time.Date(now.Year(), now.Month(), now.Day(), currAvg/60, currAvg%60, 0, 0, time.Local)
-	return since, exit, sinceIdeal, exitIdeal, ifNow
+	ifNow := time.Date(now.Year(), now.Month(), now.Day(), currAvg/60, currAvg%60, 0, 0, time.Local)
+	average := time.Date(now.Year(), now.Month(), now.Day(), avg[0], avg[1], 0, 0, time.Local)
+	return HomeTime{since, exit, sinceIdeal, exitIdeal, ifNow, average}
 }
