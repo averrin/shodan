@@ -210,7 +210,7 @@ func (info *Info) GetAverage() []int {
 func (info *Info) GetHomeTime() (since time.Duration, exit time.Time, sinceIdeal time.Duration, exitIdeal time.Time, ifNow time.Time) {
 	now := time.Now()
 	today := info.Days[now.Day()]
-	exit = today.Enter.Add(8 * time.Hour).In(time.Local)
+	exit = today.Enter.Add(8 * time.Hour).Local()
 	since = exit.Sub(now)
 
 	workDays := 0

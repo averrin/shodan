@@ -70,6 +70,7 @@ func (s *Shodan) initAPI() {
 		json.Unmarshal(message, &hook)
 		if hook.Build.Status == "testing" {
 			s.Say("build started")
+			s.Say(fmt.Sprintf("%s [%s]", hook.Build.Message, hook.Build.BuildURL))
 		} else if hook.Build.Status == "success" {
 			s.Say("build success")
 		} else if hook.Build.Status == "error" {
