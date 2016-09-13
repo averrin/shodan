@@ -37,16 +37,16 @@ type Weather struct {
 	// Nowcast          string   `json:"nowcast"`
 	// ObURL            string   `json:"ob_url"`
 	// ObservationEpoch string   `json:"observation_epoch"`
-	// ObservationLocation struct {
-	// 	City           string `json:"city"`
-	// 	Country        string `json:"country"`
-	// 	CountryIso3166 string `json:"country_iso3166"`
-	// 	Elevation      string `json:"elevation"`
-	// 	Full           string `json:"full"`
-	// 	Latitude       string `json:"latitude"`
-	// 	Longitude      string `json:"longitude"`
-	// 	State          string `json:"state"`
-	// } `json:"observation_location"`
+	ObservationLocation struct {
+		City string `json:"city"`
+		// 	Country        string `json:"country"`
+		// 	CountryIso3166 string `json:"country_iso3166"`
+		// 	Elevation      string `json:"elevation"`
+		// 	Full           string `json:"full"`
+		// 	Latitude       string `json:"latitude"`
+		// 	Longitude      string `json:"longitude"`
+		// 	State          string `json:"state"`
+	} `json:"observation_location"`
 	// ObservationTime       string  `json:"observation_time"`
 	// ObservationTimeRfc822 string  `json:"observation_time_rfc822"`
 	// Precip1hrIn           string  `json:"precip_1hr_in"`
@@ -95,23 +95,30 @@ type WeatherResponse struct {
 
 type WUnderground map[string]string
 
-func Connect(creds map[string]string) WUnderground {
+func Connect(creds map[string]string) *WUnderground {
 	wu := WUnderground{}
 	for k, v := range creds {
 		wu[k] = v
 	}
 	wu.SetLocation("location")
-	return wu
+	return &wu
 }
 
-func (wu WUnderground) SetLocation(key string) {
-	wu["current_location"] = wu[key]
+func (wu *WUnderground) SetLocation(key string) {
+	creds := *(wu)
+	creds["current_location"] = creds[key]
 }
 
-func (wu WUnderground) GetWeather() (w Weather, err error) {
+func (wu *WUnderground) GetLocation() string {
+	creds := *(wu)
+	return creds["current_location"]
+}
+
+func (wu *WUnderground) GetWeather() (w Weather, err error) {
 	// log.Println("Start getting weather")
 	red := color.New(color.FgRed).SprintFunc()
-	url := fmt.Sprintf(wuURL, wu["apiKey"], wu["current_location"])
+	creds := *(wu)
+	url := fmt.Sprintf(wuURL, creds["apiKey"], creds["current_location"])
 	response, err := http.Get(url)
 	defer response.Body.Close()
 	if err != nil || response.StatusCode != 200 {

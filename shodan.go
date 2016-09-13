@@ -23,7 +23,7 @@ import (
 // var pushbullet pb.Pushbullet
 var telegram tg.Telegram
 
-var weather wu.WUnderground
+var weather *wu.WUnderground
 var datastream *ds.DataStream
 var storage *stor.Storage
 var personal p.Personal
@@ -239,9 +239,9 @@ func (s *Shodan) Serve() {
 				return
 			}
 			ws := personal.GetWeatherIsOk(w)
-			datastream.SetValue("weatherisok", fmt.Sprintf("%s", ws))
+			datastream.SetValue("weatherisok", fmt.Sprintf("%v", ws))
 			datastream.SetValue("weather", w)
-			datastream.SetValue("weatherLocation", weather["current_location"])
+			datastream.SetValue("weatherLocation", weather.GetLocation())
 			var event string
 			if ws {
 				event = "to_good"
