@@ -76,22 +76,22 @@ func (s *Shodan) getCommands() Commands {
 		{"debug", 0,
 			func(args ...string) {
 				s.Flags["debug"] = true
-				s.Say("debug on")
+				s.SayOffRecord("debug on")
 			},
 		},
 		{"w", 0,
 			func(args ...string) {
 				w, err := weather.GetWeather()
 				if err != nil || w.Weather == "" {
-					s.Say("no weather")
+					s.SayOffRecord("no weather")
 					return
 				}
-				s.Say(fmt.Sprintf("%s - %v°", w.Weather, w.TempC))
+				s.SayOffRecord(fmt.Sprintf("%s - %v°", w.Weather, w.TempC))
 			},
 		},
 		{"whereiam", 0,
 			func(args ...string) {
-				s.Say(fmt.Sprintf("U r at %s", s.States["place"].GetState()))
+				s.SayOffRecord(fmt.Sprintf("U r at %s", s.States["place"].GetState()))
 			},
 		},
 		{"restart", 0,
@@ -111,7 +111,7 @@ func (s *Shodan) getCommands() Commands {
 		{"cmd", 2,
 			func(args ...string) {
 				sign := fmt.Sprintf("%s.%s(%s)", args[0], args[1], strings.Join(args[2:], ", "))
-				s.Say(sign)
+				s.SayOffRecord(sign)
 				s.Say("sending command")
 				storage.ReportEvent("command", sign)
 				result := datastream.SendCommand(ds.Command{
@@ -146,16 +146,16 @@ func (s *Shodan) getCommands() Commands {
 				case args[0] == "list":
 					notes := storage.GetNotes()
 					if len(notes) > 0 {
-						s.Say("notes:")
+						s.SayOffRecord("notes:")
 						for _, n := range notes {
-							s.Say(n.Text)
+							s.SayOffRecord(n.Text)
 						}
 					} else {
-						s.Say("no notes")
+						s.SayOffRecord("no notes")
 					}
 				case args[0] == "clear":
 					storage.ClearNotes()
-					s.Say("cleared")
+					s.SayOffRecord("cleared")
 				}
 			},
 		},
