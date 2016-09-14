@@ -55,6 +55,10 @@ type Change struct {
 	NewVal Event `gorethink:"new_val"`
 }
 
+type NoteChange struct {
+	NewVal Note `gorethink:"new_val"`
+}
+
 func (stor *Storage) GetEventsStream() chan Event {
 	creds := *stor
 	c := make(chan Event)
@@ -66,6 +70,25 @@ func (stor *Storage) GetEventsStream() chan Event {
 	}
 	go func() {
 		ch := Change{}
+		for res.Next(&ch) {
+			c <- ch.NewVal
+		}
+		res.Close()
+	}()
+	return c
+}
+
+func (stor *Storage) GetNotesStream() chan Note {
+	creds := *stor
+	c := make(chan Note)
+	res, err := r.DB(creds["database"]).Table("notes").Changes(r.ChangesOpts{
+	// IncludeInitial: true,
+	}).Run(conn)
+	if err != nil {
+		log.Println(err)
+	}
+	go func() {
+		ch := NoteChange{}
 		for res.Next(&ch) {
 			c <- ch.NewVal
 		}
