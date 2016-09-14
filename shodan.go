@@ -219,19 +219,22 @@ func (s *Shodan) Serve() {
 			WORK := "work"
 			if t.Minutes() < 1 && s.LastPlace == WORK && s.Flags["late at work"] != true && time.Now().Hour() > 12 {
 				go func() {
+					s.Flags["late at work"] = true
 					time.Sleep(10 * time.Minute)
 					ht := attendance.GetAttendance().GetHomeTime()
 					if s.LastPlace == WORK {
 						if dt != "evening" && ht.SinceIdeal.Minutes() < 1 {
+							s.Flags["late at work"] = false
 							s.Say("attendance glitch")
 							s.Say(fmt.Sprintf("Debug: %v", t))
 							storage.ReportEvent("attendanceGlitch", "")
 						} else {
-							s.Flags["late at work"] = true
 							s.Say("go home")
 							s.Say(fmt.Sprintf("Debug: %v", t))
 							storage.ReportEvent("lateAtWork", "")
 						}
+					} else {
+						s.Flags["late at work"] = false
 					}
 				}()
 			}
