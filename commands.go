@@ -219,6 +219,7 @@ func (s *Shodan) dispatchMessages(m string) {
 		}
 	} else {
 		storage.SaveNote(m)
-		s.Say("saved")
+		storage.ReportEvent("note", m)
+		s.SayOffRecord("saved")
 	}
 }
