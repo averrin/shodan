@@ -131,7 +131,6 @@ func (s *Shodan) processPSB(psb string) string {
 	log.Println(amountRaw[0], amountRaw[1])
 	amount, err := strconv.Atoi(strings.Replace(amountRaw[1], " ", "", -1))
 	log.Println(amount, err)
-	storage.ReportEvent("amount", fmt.Sprintf("%d", amount))
 	value := ds.Value{}
 	datastream.Get("amount", &value)
 	lastAmount := 0
@@ -141,6 +140,7 @@ func (s *Shodan) processPSB(psb string) string {
 		log.Println(err)
 	}
 	if lastAmount != amount {
+		storage.ReportEvent("amount", fmt.Sprintf("%d", amount))
 		diff := amount - lastAmount
 		storage.ReportEvent("amountDiff", fmt.Sprintf("%d", diff))
 		if diff > 0 {
