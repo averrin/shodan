@@ -38,6 +38,7 @@ func (stor *Storage) ClearNotes() {
 	if err != nil {
 		log.Println(err)
 	}
+	stor.ReportEvent("notesCleared", "")
 }
 
 func (stor *Storage) DeleteNote(id string) {
@@ -46,6 +47,7 @@ func (stor *Storage) DeleteNote(id string) {
 	if err != nil {
 		log.Println(err)
 	}
+	stor.ReportEvent("noteDeleted", "")
 }
 
 func (stor *Storage) GetNotes() []Note {
@@ -70,4 +72,5 @@ func (stor *Storage) SaveNote(text string) {
 	if err != nil {
 		log.Println(err)
 	}
+	stor.ReportEvent("note", text)
 }
