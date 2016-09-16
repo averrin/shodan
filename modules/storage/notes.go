@@ -10,7 +10,7 @@ import (
 type Note struct {
 	Text      string    `json:"Text"`
 	Timestamp time.Time `json:"Timestamp"`
-	ID        string    `gorethink:"id" json:"ID"`
+	ID        string    `gorethink:"id,omitempty" json:"ID"`
 }
 
 func (stor *Storage) GetNotesStream() chan Note {
@@ -68,9 +68,7 @@ func (stor *Storage) SaveNote(text string) {
 		Text:      text,
 		Timestamp: time.Now(),
 	}
-	log.Println(note)
-	c, err := r.DB(creds["database"]).Table("notes").Insert(note).Run(conn)
-	log.Println(c, err)
+	_, err := r.DB(creds["database"]).Table("notes").Insert(note).Run(conn)
 	if err != nil {
 		log.Println(err)
 	}
