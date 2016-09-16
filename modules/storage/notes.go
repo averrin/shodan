@@ -68,7 +68,9 @@ func (stor *Storage) SaveNote(text string) {
 		Text:      text,
 		Timestamp: time.Now(),
 	}
-	_, err := r.DB(creds["database"]).Table("notes").Insert(note).Run(conn)
+	log.Println(note)
+	c, err := r.DB(creds["database"]).Table("notes").Insert(note).Run(conn)
+	log.Println(c, err)
 	if err != nil {
 		log.Println(err)
 	}

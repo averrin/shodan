@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"strings"
 	"time"
@@ -63,7 +62,6 @@ func (s *Shodan) getCommands() Commands {
 		},
 		{"imat", 1,
 			func(args ...string) {
-				log.Println("P:", args[0])
 				datastream.SetWhereIAm(args[0])
 				s.Machines["place"].Trigger(args[0], s.States["place"], s.DB)
 			},
