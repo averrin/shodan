@@ -53,7 +53,7 @@ func (stor *Storage) DeleteNote(id string) {
 func (stor *Storage) GetNotes() []Note {
 	creds := *stor
 	notes := []Note{}
-	res, err := r.DB(creds["database"]).Table("notes").Run(conn)
+	res, err := r.DB(creds["database"]).Table("notes").OrderBy(r.Desc("Timestamp")).Run(conn)
 	defer res.Close()
 	if err != nil {
 		log.Println(err)
